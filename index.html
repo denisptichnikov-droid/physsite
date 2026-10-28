@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ЕГЭ по физике — справочник</title>
+  <meta name="description" content="Справочник для подготовки к ЕГЭ по физике: теория, все формулы, типичные ошибки, лайфхаки и интерактивные модели.">
+  <script>
+    // Тема до первой отрисовки, чтобы не мигало.
+    try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=2">
+  <link rel="stylesheet" href="assets/css/base.css?v=2">
+  <link rel="stylesheet" href="assets/css/components.css?v=2">
+  <link rel="stylesheet" href="assets/css/models.css?v=2">
+  <script type="module" src="assets/js/app.js?v=2"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">К содержанию</a>
+  <header class="topbar">
+    <button class="nav-toggle" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="Меню разделов">☰</button>
+    <a class="brand" href="#/"><span class="brand__mark" aria-hidden="true">Φ</span><span class="brand__text">ЕГЭ по физике</span></a>
+    <form class="search" role="search" action="javascript:void 0">
+      <input class="search__input" type="search" placeholder="Поиск формулы или темы…" aria-label="Поиск по сайту" autocomplete="off">
+    </form>
+    <button class="theme-toggle" type="button" aria-label="Сменить тему">◐</button>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="sidebar" aria-label="Разделы"></nav>
+    <div class="sidebar-backdrop" hidden></div>
+    <main id="main" class="page" tabindex="-1">
+      <p class="loading">Загрузка…</p>
+    </main>
+    <aside class="toc" aria-label="Оглавление страницы"></aside>
+  </div>
+  <footer class="footer">
+    <p>Справочник для подготовки к ЕГЭ по физике. Значения констант — как в справочных данных экзамена.</p>
+  </footer>
+</body>
+</html>
