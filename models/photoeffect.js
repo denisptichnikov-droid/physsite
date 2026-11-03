@@ -2,6 +2,21 @@
 // Формулы — CLAUDE.md, часть B, 4.1.1, 4.1.2, 4.1.4.
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const H = 6.6e-34;   // постоянная Планка, Дж·с
 const C = 3e8;       // скорость света, м/с
 const E = 1.6e-19;   // модуль заряда электрона, Кл
@@ -18,8 +33,8 @@ const METALS = [
 ];
 
 const U_SAT = 1;          // напряжение выхода на насыщение, В (условно, только для формы ВАХ)
-const N_PER_PCT = 1e12;   // фотоэлектронов в 1 с на 1 % интенсивности (условно)
-const Y_MAX_UA = 18;      // верх оси тока, мкА
+const YIELD = 0.2;        // доля фотонов, выбивающих электрон (условно, одна для всех металлов)
+const Y_MAX_UA = 12;      // верх оси тока, мкА
 const SPEED = 0.9;        // масштаб скорости частиц в анимации
 const DEF = { metal: 'K', lam: 400, inten: 50, U: 0 };
 
@@ -46,27 +61,26 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Фотоэлемент: свет выбивает электроны из катода. Ток насыщения пропорционален интенсивности, '
-        + 'запирающее напряжение и максимальная скорость электронов зависят только от частоты света и металла. '
-        + 'Форма ВАХ между −Uзап и насыщением показана качественно; число частиц в анимации условно.',
+      caption: 'Мощность задаёт число фотонов в секунду, а оно — ток насыщения. Длина волны задаёт энергию фотона, а она — скорость электрона и Uзап.\nПри той же мощности короче волна — меньше фотонов и ток насыщения меньше, зато электроны быстрее. Участок ВАХ до насыщения показан качественно.',
     });
-    const cvT = L.canvas(ui.stage, { aspect: 0.5, minHeight: 220, maxHeight: 360, label: 'Фотоэлемент: свет падает на катод, фотоэлектроны летят к аноду' });
+    el.querySelector('.model-caption').style.whiteSpace = 'pre-line';
+    const cvT = L.canvas(ui.stage, { aspect: 0.5, minHeight: 210, maxHeight: 250, label: 'Фотоэлемент: свет падает на катод, фотоэлектроны летят к аноду' });
     d.add(cvT.destroy);
-    const cvG = L.canvas(ui.stage, { aspect: 0.5, minHeight: 210, maxHeight: 320, label: 'Вольт-амперная характеристика фотоэлемента I(U)' });
+    const cvG = L.canvas(ui.stage, { aspect: 0.4, minHeight: 170, maxHeight: 190, label: 'Вольт-амперная характеристика фотоэлемента I(U)' });
     d.add(cvG.destroy);
 
-    const metal = L.choice(ui.controls, {
+    const metal = L.choice(ui.controls, { key: 'metal',
       label: 'Металл катода (A<sub>вых</sub>)',
       options: METALS.map((m) => ({ value: m.value, label: `${m.name} (${L.fmt(m.A)} эВ)` })),
       value: DEF.metal,
       onChange: update,
     });
-    const sLam = L.slider(ui.controls, {
+    const sLam = L.slider(ui.controls, { key: 'sLam',
       label: 'Длина волны λ', min: 100, max: 800, step: 5, value: DEF.lam,
       format: (v) => `${L.fmt(v, 0)} нм (${region(v)})`, onInput: update,
     });
-    const sI = L.slider(ui.controls, { label: 'Интенсивность света', min: 0, max: 100, step: 5, value: DEF.inten, unit: '%', onInput: update });
-    const sU = L.slider(ui.controls, {
+    const sI = L.slider(ui.controls, { key: 'sI', label: 'Мощность света P (интенсивность)', min: 0, max: 100, step: 5, value: DEF.inten, unit: 'мкВт', onInput: update });
+    const sU = L.slider(ui.controls, { key: 'sU',
       label: 'Напряжение U = φ<sub>анода</sub> − φ<sub>катода</sub>', min: -12, max: 12, step: 0.1, value: DEF.U,
       format: (v) => L.fmt(v, 1), unit: 'В', onInput: update,
     });
@@ -77,7 +91,7 @@ export default {
     d.add(anim.destroy);
     const play = L.playButton(ui.controls, anim);
     L.button(ui.controls, 'Сброс', reset, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function phys() {
       const m = METALS.find((x) => x.value === metal.value) || METALS[0];
@@ -92,9 +106,11 @@ export default {
       const has = Ek > 0;
       const Uz = has ? Ek / E : 0;        // eU_зап = E_кин max
       const v = has ? Math.sqrt((2 * Ek) / ME) : 0;
-      const n = has ? sI.value * N_PER_PCT : 0; // фотоэлектронов в 1 с
+      const P = sI.value * 1e-6;          // мощность света, Вт
+      const Nph = P / Eph;                // фотонов в 1 с: P = N_ф·hν
+      const n = has ? YIELD * Nph : 0;    // фотоэлектронов в 1 с
       const Isat = E * n;                 // I_нас = e·n
-      return { m, lamNm, lam, nu, Eph, A, nuKr, lamKr, Ek, has, Uz, v, n, Isat };
+      return { m, lamNm, lam, nu, Eph, A, nuKr, lamKr, Ek, has, Uz, v, P, Nph, n, Isat };
     }
 
     /** Ток при напряжении U (А): 0 при U ≤ −U_зап, I_нас при U ≥ U_SAT, между — гладкий рост (качественно). */
@@ -116,7 +132,7 @@ export default {
     function step(dt) {
       const p = phys();
       if (p.has && sI.value > 0) {
-        acc += dt * 0.8 * sI.value; // ≤ 80 частиц/с
+        acc += dt * Math.min(100, p.n / 5e11); // частиц в секунду ∝ числу фотоэлектронов
         while (acc >= 1 && parts.length < 400) { acc -= 1; spawn(p); }
         if (acc >= 1) acc = 0;
       } else acc = 0;
@@ -262,20 +278,26 @@ export default {
       const I = current(U, p);
       const f = L.fmt;
       ro.set([
-        ['Металл катода', p.m.name],
-        ['λ', `${f(p.lamNm, 0)} нм = ${f(p.lam)} м`],
-        ['ν = c/λ', `${f(p.nu)} Гц`],
-        ['E<sub>ф</sub> = hν = hc/λ', `${f(p.Eph / EV)} эВ = ${f(p.Eph)} Дж`],
-        ['A<sub>вых</sub>', `${f(p.m.A)} эВ = ${f(p.A)} Дж`],
-        ['ν<sub>кр</sub> = A<sub>вых</sub>/h', `${f(p.nuKr)} Гц`],
+        ['P → фотонов в 1 с (P/hν) → I<sub>нас</sub> = e·n', `${f(p.P * 1e6, 0)} мкВт → ${f(p.Nph)} с⁻¹ → ${f(p.Isat * 1e6)} мкА`],
+        ['λ → E<sub>ф</sub> = hc/λ → E<sub>кин max</sub> = hν − A<sub>вых</sub> → v<sub>max</sub>', p.has
+          ? `${f(p.lamNm, 0)} нм → ${f(p.Eph / EV)} эВ → ${f(p.Ek / EV)} эВ → ${f(p.v)} м/с`
+          : `${f(p.lamNm, 0)} нм → ${f(p.Eph / EV)} эВ: фотоэффекта нет (hν ≤ Aвых)`],
         ['λ<sub>кр</sub> = hc/A<sub>вых</sub>', `${f(p.lamKr * 1e9, 1)} нм`],
-        ['E<sub>кин max</sub> = hν − A<sub>вых</sub>', p.has ? `${f(p.Ek / EV)} эВ = ${f(p.Ek)} Дж` : 'фотоэффекта нет (hν ≤ Aвых)'],
         ['U<sub>зап</sub> = E<sub>кин max</sub>/e', p.has ? `${f(p.Uz)} В` : '—'],
-        ['v<sub>max</sub> = √(2E<sub>кин max</sub>/m<sub>e</sub>)', p.has ? `${f(p.v)} м/с` : '—'],
-        ['n (фотоэлектронов в 1 с)', p.has ? `${f(p.n)} с⁻¹` : '0'],
-        ['I<sub>нас</sub> = e·n', `${f(p.Isat)} А`],
         [`I при U = ${f(U, 1)} В`, `${f(I)} А`],
+      ], [
+        ['Металл катода', p.m.name],
+        ['A<sub>вых</sub>', `${f(p.m.A)} эВ = ${f(p.A)} Дж`],
+        ['λ', `${f(p.lam)} м`],
+        ['ν = c/λ', `${f(p.nu)} Гц`],
+        ['E<sub>ф</sub> = hν', `${f(p.Eph)} Дж`],
+        ['ν<sub>кр</sub> = A<sub>вых</sub>/h', `${f(p.nuKr)} Гц`],
+        ['E<sub>кин max</sub>', p.has ? `${f(p.Ek)} Дж` : '—'],
+        ['n (фотоэлектронов в 1 с)', p.has ? `${f(p.n)} с⁻¹ (условно ${f(YIELD * 100, 0)} % фотонов)` : '0'],
       ]);
+      // цепочки длинные: на всю ширину панели
+      const list = ui.readout.querySelector('.model-readout__list');
+      if (list) for (const row of [...list.children].slice(0, 2)) row.style.gridColumn = '1 / -1';
     }
 
     function update() {

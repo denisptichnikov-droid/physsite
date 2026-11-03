@@ -56,8 +56,7 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Нити невесомые и нерастяжимые, блоки невесомые, трения в блоках нет — поэтому натяжение T одинаково по всей нити. '
-        + 'Через неподвижный блок тела движутся с одинаковыми по модулю ускорениями; с подвижным блоком свободный конец нити проходит вдвое больший путь: a₂ = 2a₁ (тело 1 — на подвижном блоке, тело 2 — на свободном конце).',
+      caption: 'Нити нерастяжимы, нити и блоки невесомые, трения в блоках нет — натяжение T одинаково по всей нити. С подвижным блоком a₂ = 2a₁ (тело 1 — на блоке, тело 2 — на свободном конце).',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.8, minHeight: 300, maxHeight: 520, label: 'Система грузов, связанных нитью через блоки, с силами и ускорениями' });
     d.add(cv.destroy);
@@ -65,7 +64,7 @@ export default {
     let tau = 0, hold = 0, atEnd = false;
     const restart = () => { tau = 0; hold = 0; atEnd = false; };
     const changed = () => { restart(); sync(); draw(); };
-    const ch = L.choice(ui.controls, {
+    const ch = L.choice(ui.controls, { key: 'ch',
       label: 'Схема',
       value: DEF.scheme,
       options: [
@@ -75,9 +74,9 @@ export default {
       ],
       onChange: changed,
     });
-    const sM1 = L.slider(ui.controls, { label: 'Масса m<sub>1</sub>', min: 0.1, max: 5, step: 0.1, value: DEF.m1, unit: 'кг', onInput: changed });
-    const sM2 = L.slider(ui.controls, { label: 'Масса m<sub>2</sub>', min: 0.1, max: 5, step: 0.1, value: DEF.m2, unit: 'кг', onInput: changed });
-    const sMu = L.slider(ui.controls, { label: 'Коэффициент трения μ (брусок — стол)', min: 0, max: 1, step: 0.05, value: DEF.mu, onInput: changed });
+    const sM1 = L.slider(ui.controls, { key: 'sM1', label: 'Масса m<sub>1</sub>', min: 0.1, max: 5, step: 0.1, value: DEF.m1, unit: 'кг', onInput: changed });
+    const sM2 = L.slider(ui.controls, { key: 'sM2', label: 'Масса m<sub>2</sub>', min: 0.1, max: 5, step: 0.1, value: DEF.m2, unit: 'кг', onInput: changed });
+    const sMu = L.slider(ui.controls, { key: 'sMu', label: 'Коэффициент трения μ (брусок — стол)', min: 0, max: 1, step: 0.05, value: DEF.mu, onInput: changed });
     function sync() { sMu.el.style.display = ch.value === 'table' ? '' : 'none'; }
 
     const anim = L.animator((dt) => {

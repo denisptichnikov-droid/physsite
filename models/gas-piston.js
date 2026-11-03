@@ -3,6 +3,21 @@
 // 2.2.6 (A = pΔV, площадь под графиком), 2.2.7 (первый закон, Q для изопроцессов).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const R = 8.31;            // Дж/(моль·К)
 const NU = 1;              // количество вещества, моль (фиксировано)
 const T0 = 300;            // начальная температура, К
@@ -12,6 +27,8 @@ const V_LIM = [5, 40];     // диапазон V для изотермы, л
 const T_LIM = [100, 600];  // диапазон T для изохоры и изобары, К
 const N_PART = 48;         // число частиц в анимации (ν = const → N = const)
 const V_VIS = 0.045;       // объём, соответствующий полной высоте цилиндра на рисунке, м³
+const PROC_TIME = 3;       // длительность анимации процесса 1→2, с
+const TARGET = { T: 10, V: 600, p: 450 }; // состояние 2 по умолчанию: V (л) для изотермы, T (К) иначе
 
 const MODES = {
   T: { name: 'изотермический (T = const)', short: 'Изотерма: T = const' },
@@ -102,15 +119,13 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Одноатомный идеальный газ, ν = 1 моль; начальное состояние 1: V₁ = 20 л, T₁ = 300 К. '
-        + 'Число частиц на рисунке постоянно (ν = const), их скорость растёт как √T. '
-        + 'Работа газа равна площади под графиком p(V) (закрашена); для изотермы она посчитана численно как площадь под гиперболой.',
+      caption: 'Одноатомный газ, ν = 1 моль; состояние 1: V₁ = 20 л, T₁ = 300 К. Выбери процесс и запусти его кнопкой или двигай слайдер. Площадь под графиком p(V) — работа газа.',
     });
-    const cv = L.canvas(ui.stage, { aspect: 1, minHeight: 320, maxHeight: 560, label: 'Цилиндр с газом под поршнем и диаграммы процесса pV, pT, VT' });
+    const cv = L.canvas(ui.stage, { aspect: 0.82, minHeight: 320, maxHeight: 470, label: 'Цилиндр с газом под поршнем и диаграммы процесса pV, pT, VT' });
     d.add(cv.destroy);
 
     let mode = 'T';
-    const ch = L.choice(ui.controls, {
+    const ch = L.choice(ui.controls, { key: 'ch',
       label: 'Процесс',
       options: [
         { value: 'T', label: 'изотермический' },
@@ -118,13 +133,15 @@ export default {
         { value: 'p', label: 'изобарный' },
       ],
       value: 'T',
-      onChange: (v) => { mode = v; sV.set(V0 * 1000); sT.set(T0); sync(); draw(); },
+      onChange: (v) => { cancelProc(); mode = v; sV.set(V0 * 1000); sT.set(T0); sync(); draw(); },
     });
-    const sV = L.slider(ui.controls, { label: 'Объём V', min: V_LIM[0], max: V_LIM[1], step: 1, value: V0 * 1000, unit: 'л', onInput: () => draw() });
-    const sT = L.slider(ui.controls, { label: 'Температура T', min: T_LIM[0], max: T_LIM[1], step: 10, value: T0, unit: 'К', onInput: () => draw() });
-    const ro = L.readout(ui.readout);
+    const sV = L.slider(ui.controls, { key: 'sV', label: 'Объём V', min: V_LIM[0], max: V_LIM[1], step: 1, value: V0 * 1000, unit: 'л', onInput: () => { cancelProc(); draw(); } });
+    const sT = L.slider(ui.controls, { key: 'sT', label: 'Температура T', min: T_LIM[0], max: T_LIM[1], step: 10, value: T0, unit: 'К', onInput: () => { cancelProc(); draw(); } });
+    const ro = moreReadout(ui.readout);
 
-    const cur = () => (mode === 'T' ? sV.value : sT.value);
+    let xAnim = null; // значение управляющего параметра во время проигрывания процесса
+    const slid = () => (mode === 'T' ? sV : sT);
+    const cur = () => xAnim ?? slid().value;
     function sync() {
       sV.el.style.display = mode === 'T' ? '' : 'none';
       sT.el.style.display = mode === 'T' ? 'none' : '';
@@ -149,7 +166,36 @@ export default {
     const anim = L.animator((dt) => { move(dt); draw(); }, { autoplay: true });
     d.add(anim.destroy);
     const play = L.playButton(ui.controls, anim);
+
+    // Проигрывание процесса 1→2: до значения на слайдере, а если он в состоянии 1 — до состояния по умолчанию.
+    let proc = null;
+    const procAnim = L.animator((dt) => {
+      if (!proc) return;
+      if (!anim.running) move(dt);
+      proc.t += dt / PROC_TIME;
+      if (proc.t >= 1) { const { to } = proc; cancelProc(); slid().set(to); draw(); return; }
+      xAnim = proc.from + (proc.to - proc.from) * proc.t;
+      slid().set(xAnim);
+      draw();
+    });
+    d.add(procAnim.destroy);
+    function cancelProc() {
+      if (!proc) return;
+      proc = null; xAnim = null; procAnim.stop(); btnProc.disabled = false;
+    }
+    const btnProc = L.button(ui.controls, 'Запустить процесс 1→2', () => {
+      cancelProc();
+      const from = start(mode);
+      const to = slid().value === from ? TARGET[mode] : slid().value;
+      if (L.prefersReducedMotion()) { slid().set(to); draw(); return; }
+      proc = { from, to, t: 0 };
+      xAnim = from; slid().set(from);
+      btnProc.disabled = true;
+      procAnim.start();
+    });
+
     L.button(ui.controls, 'Сброс', () => {
+      cancelProc();
       mode = 'T';
       ch.set('T');
       sV.set(V0 * 1000); sT.set(T0);
@@ -280,20 +326,21 @@ export default {
       drawCylinder(ctx, cells[0], s, e, c);
       DIAG.forEach((sp, i) => drawDiagram(ctx, cells[i + 1], sp, c));
 
-      const key = `${mode}|${cur()}`;
+      const key = `${mode}|${xAnim === null ? `end${cur()}` : Math.round(cur() / (mode === 'T' ? 1 : 10))}`;
       if (key === lastKey) return;
       lastKey = key;
       ro.set([
-        ['Процесс', MODES[mode].name],
-        ['Состояние 1', `p₁ = ${sci(P0)} Па, V₁ = ${sci(V0)} м³, T₁ = ${T0} К`],
         ['Давление p', `${sci(s.p)} Па`],
         ['Объём V', `${sci(s.V)} м³ (${L.fmt(s.V * 1000, 1)} л)`],
         ['Температура T', `${L.fmt(s.T, 0)} К (${L.fmt(s.T - 273, 0)} °C)`],
-        ['pV/T (= νR = const)', `${L.fmt((s.p * s.V) / s.T, 2)} Дж/К`],
-        ['U = 3/2·νRT', `${en(1.5 * NU * R * s.T)} Дж`],
         [mode === 'T' ? 'A газа (1→2) = площадь под графиком' : mode === 'V' ? 'A газа (1→2), изохора' : 'A газа (1→2) = pΔV', `${en(e.A)} Дж`],
         ['ΔU = 3/2·νRΔT', `${en(e.dU)} Дж`],
         [mode === 'T' ? 'Q = A (изотерма)' : mode === 'V' ? 'Q = 3/2·νRΔT' : 'Q = 5/2·νRΔT', `${en(e.Q)} Дж`],
+      ], [
+        ['Процесс', MODES[mode].name],
+        ['Состояние 1', `p₁ = ${sci(P0)} Па, V₁ = ${sci(V0)} м³, T₁ = ${T0} К`],
+        ['pV/T (= νR = const)', `${L.fmt((s.p * s.V) / s.T, 2)} Дж/К`],
+        ['U = 3/2·νRT', `${en(1.5 * NU * R * s.T)} Дж`],
       ]);
     }
 

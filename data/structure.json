@@ -1,0 +1,694 @@
+{
+  "sections": [
+    {
+      "slug": "mechanics",
+      "title": "Механика",
+      "num": 1,
+      "subsections": [
+        {
+          "slug": "kinematics-basics",
+          "title": "Основы кинематики, равномерное движение",
+          "codes": [
+            "1.1.1",
+            "1.1.2",
+            "1.1.3",
+            "1.1.4",
+            "1.1.5"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "motion-graphs"
+          ]
+        },
+        {
+          "slug": "uniform-acceleration",
+          "title": "Равноускоренное движение, графики",
+          "codes": [
+            "1.1.6"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "motion-graphs"
+          ]
+        },
+        {
+          "slug": "projectile",
+          "title": "Свободное падение, бросок под углом",
+          "codes": [
+            "1.1.7"
+          ],
+          "level": "УУ",
+          "models": [
+            "projectile"
+          ]
+        },
+        {
+          "slug": "circular",
+          "title": "Движение по окружности, твёрдое тело",
+          "codes": [
+            "1.1.8",
+            "1.1.9"
+          ],
+          "level": "БУ, УУ",
+          "uuOnly": [
+            "1.1.9"
+          ],
+          "models": [
+            "circular-motion"
+          ]
+        },
+        {
+          "slug": "newton-laws",
+          "title": "Законы Ньютона, ИСО",
+          "codes": [
+            "1.2.1",
+            "1.2.2",
+            "1.2.3",
+            "1.2.4",
+            "1.2.5"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "pulleys"
+          ]
+        },
+        {
+          "slug": "forces",
+          "title": "Силы: тяготение, упругость, трение, вес",
+          "codes": [
+            "1.2.6",
+            "1.2.7",
+            "1.2.8"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "incline"
+          ]
+        },
+        {
+          "slug": "statics",
+          "title": "Статика: моменты, центр масс, равновесие",
+          "codes": [
+            "1.3.1",
+            "1.3.2",
+            "1.3.3"
+          ],
+          "level": "БУ, УУ",
+          "uuOnly": [
+            "1.3.2",
+            "1.3.3"
+          ],
+          "models": [
+            "lever-moments"
+          ]
+        },
+        {
+          "slug": "hydrostatics",
+          "title": "Давление, Паскаль, Архимед",
+          "codes": [
+            "1.2.9",
+            "1.3.4",
+            "1.3.5",
+            "1.3.6"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "archimedes"
+          ]
+        },
+        {
+          "slug": "momentum",
+          "title": "Импульс, закон сохранения, реактивное движение",
+          "codes": [
+            "1.4.1",
+            "1.4.2",
+            "1.4.3"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "collisions"
+          ]
+        },
+        {
+          "slug": "energy",
+          "title": "Работа, мощность, энергия, ЗСЭ",
+          "codes": [
+            "1.4.4",
+            "1.4.5",
+            "1.4.6",
+            "1.4.7",
+            "1.4.8"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "energy-bars"
+          ]
+        },
+        {
+          "slug": "oscillations",
+          "title": "Механические колебания, маятники, резонанс",
+          "codes": [
+            "1.5.1",
+            "1.5.2",
+            "1.5.3"
+          ],
+          "level": "БУ, УУ",
+          "uuOnly": [
+            "1.5.3"
+          ],
+          "models": [
+            "pendulums",
+            "resonance"
+          ]
+        },
+        {
+          "slug": "waves",
+          "title": "Механические волны, звук",
+          "codes": [
+            "1.5.4",
+            "1.5.5"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "wave"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "molecular",
+      "title": "Молекулярная физика и термодинамика",
+      "num": 2,
+      "subsections": [
+        {
+          "slug": "mkt-basics",
+          "title": "Основы МКТ, количество вещества",
+          "codes": [
+            "2.1.1",
+            "2.1.2",
+            "2.1.3",
+            "2.1.4",
+            "2.1.5"
+          ],
+          "level": "БУ, УУ",
+          "models": []
+        },
+        {
+          "slug": "mkt-equation",
+          "title": "Основное уравнение МКТ, температура",
+          "codes": [
+            "2.1.6",
+            "2.1.7",
+            "2.1.8",
+            "2.1.9"
+          ],
+          "level": "БУ, УУ",
+          "models": []
+        },
+        {
+          "slug": "ideal-gas",
+          "title": "Уравнение Менделеева–Клапейрона, Дальтон",
+          "codes": [
+            "2.1.10",
+            "2.1.11"
+          ],
+          "level": "БУ, УУ",
+          "models": []
+        },
+        {
+          "slug": "isoprocesses",
+          "title": "Изопроцессы и их графики (pV, pT, VT)",
+          "codes": [
+            "2.1.12"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "gas-piston"
+          ]
+        },
+        {
+          "slug": "vapor-humidity",
+          "title": "Насыщенный пар, влажность",
+          "codes": [
+            "2.1.13",
+            "2.1.14"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "humidity"
+          ]
+        },
+        {
+          "slug": "phase-transitions",
+          "title": "Агрегатные переходы",
+          "codes": [
+            "2.1.15",
+            "2.1.16",
+            "2.1.17"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "phase-graph"
+          ]
+        },
+        {
+          "slug": "internal-energy-work",
+          "title": "Внутренняя энергия, теплопередача, работа газа",
+          "codes": [
+            "2.2.1",
+            "2.2.2",
+            "2.2.3",
+            "2.2.6"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "cycle-work"
+          ]
+        },
+        {
+          "slug": "calorimetry",
+          "title": "Количество теплоты, уравнение теплового баланса",
+          "codes": [
+            "2.2.4",
+            "2.2.5",
+            "2.2.11"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "phase-graph"
+          ]
+        },
+        {
+          "slug": "first-law",
+          "title": "Первый закон термодинамики, адиабата",
+          "codes": [
+            "2.2.7"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "cycle-work"
+          ]
+        },
+        {
+          "slug": "heat-engines",
+          "title": "Второй закон, тепловые машины, цикл Карно",
+          "codes": [
+            "2.2.8",
+            "2.2.9",
+            "2.2.10"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "cycle-work",
+            "carnot"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "electromagnetism",
+      "title": "Электричество и магнетизм",
+      "num": 3,
+      "subsections": [
+        {
+          "slug": "electrostatics",
+          "title": "Заряд, закон Кулона",
+          "codes": [
+            "3.1.1",
+            "3.1.2"
+          ],
+          "level": "БУ, УУ",
+          "models": []
+        },
+        {
+          "slug": "electric-field",
+          "title": "Напряжённость, потенциал, суперпозиция",
+          "codes": [
+            "3.1.3",
+            "3.1.4",
+            "3.1.5",
+            "3.1.6"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "field-lines"
+          ]
+        },
+        {
+          "slug": "conductors-dielectrics",
+          "title": "Проводники и диэлектрики в поле",
+          "codes": [
+            "3.1.7",
+            "3.1.8"
+          ],
+          "level": "УУ",
+          "models": []
+        },
+        {
+          "slug": "capacitors",
+          "title": "Конденсаторы, соединения, энергия",
+          "codes": [
+            "3.1.9",
+            "3.1.10",
+            "3.1.11"
+          ],
+          "level": "БУ, УУ",
+          "uuOnly": [
+            "3.1.10"
+          ],
+          "models": [
+            "capacitor"
+          ]
+        },
+        {
+          "slug": "dc-current",
+          "title": "Ток, закон Ома, сопротивление",
+          "codes": [
+            "3.2.1",
+            "3.2.2",
+            "3.2.3",
+            "3.2.4"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "circuit"
+          ]
+        },
+        {
+          "slug": "emf-circuits",
+          "title": "ЭДС, полная цепь, соединения проводников",
+          "codes": [
+            "3.2.5",
+            "3.2.6",
+            "3.2.7"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "circuit"
+          ]
+        },
+        {
+          "slug": "current-work-power",
+          "title": "Работа и мощность тока, Джоуль–Ленц",
+          "codes": [
+            "3.2.8",
+            "3.2.9"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "circuit"
+          ]
+        },
+        {
+          "slug": "current-in-media",
+          "title": "Ток в средах, полупроводники, диод",
+          "codes": [
+            "3.2.10"
+          ],
+          "level": "УУ",
+          "models": []
+        },
+        {
+          "slug": "magnetic-field",
+          "title": "Магнитное поле, опыт Эрстеда, линии",
+          "codes": [
+            "3.3.1",
+            "3.3.2"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "magnetic-field-3d",
+            "magnetic-lines"
+          ]
+        },
+        {
+          "slug": "ampere-lorentz",
+          "title": "Сила Ампера, сила Лоренца",
+          "codes": [
+            "3.3.3",
+            "3.3.4"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "hand-rules-3d",
+            "helix-3d",
+            "lorentz"
+          ]
+        },
+        {
+          "slug": "em-induction",
+          "title": "Поток, Фарадей, Ленц, ЭДС в проводнике",
+          "codes": [
+            "3.4.1",
+            "3.4.2",
+            "3.4.3",
+            "3.4.4",
+            "3.4.5"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "coil-magnet-3d",
+            "rotating-frame-3d",
+            "rails-3d"
+          ]
+        },
+        {
+          "slug": "self-induction",
+          "title": "Индуктивность, самоиндукция, энергия поля",
+          "codes": [
+            "3.4.6",
+            "3.4.7"
+          ],
+          "level": "БУ, УУ",
+          "models": []
+        },
+        {
+          "slug": "lc-oscillations",
+          "title": "Колебательный контур, Томсон, резонанс",
+          "codes": [
+            "3.5.1",
+            "3.5.2",
+            "3.5.3"
+          ],
+          "level": "БУ, УУ",
+          "uuOnly": [
+            "3.5.3"
+          ],
+          "models": [
+            "lc-circuit"
+          ]
+        },
+        {
+          "slug": "ac-em-waves",
+          "title": "Переменный ток, ЭМ-волны, шкала волн",
+          "codes": [
+            "3.5.4",
+            "3.5.5",
+            "3.5.6"
+          ],
+          "level": "БУ, УУ",
+          "uuOnly": [
+            "3.5.4"
+          ],
+          "models": [
+            "em-wave-3d",
+            "em-spectrum"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "optics",
+      "title": "Оптика",
+      "num": 4,
+      "subsections": [
+        {
+          "slug": "reflection",
+          "title": "Прямолинейное распространение, отражение, плоское зеркало",
+          "codes": [
+            "3.6.1",
+            "3.6.2",
+            "3.6.3"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "plane-mirror"
+          ]
+        },
+        {
+          "slug": "refraction",
+          "title": "Преломление, показатель, призма, ПВО",
+          "codes": [
+            "3.6.4",
+            "3.6.5"
+          ],
+          "level": "БУ, УУ",
+          "uuOnly": [
+            "3.6.5"
+          ],
+          "models": [
+            "refraction",
+            "prism"
+          ]
+        },
+        {
+          "slug": "lenses",
+          "title": "Линзы, формула тонкой линзы, построения",
+          "codes": [
+            "3.6.6",
+            "3.6.7",
+            "3.6.8"
+          ],
+          "level": "БУ, УУ",
+          "uuOnly": [
+            "3.6.8"
+          ],
+          "models": [
+            "lens-builder"
+          ]
+        },
+        {
+          "slug": "optical-devices",
+          "title": "Фотоаппарат, глаз",
+          "codes": [
+            "3.6.9"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "lens-builder"
+          ]
+        },
+        {
+          "slug": "interference",
+          "title": "Интерференция",
+          "codes": [
+            "3.6.10"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "double-slit"
+          ]
+        },
+        {
+          "slug": "diffraction-dispersion",
+          "title": "Дифракция, решётка, дисперсия",
+          "codes": [
+            "3.6.11",
+            "3.6.12"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "grating",
+            "prism"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "quantum",
+      "title": "Квантовая и атомная физика",
+      "num": 5,
+      "subsections": [
+        {
+          "slug": "photons",
+          "title": "Гипотеза Планка, фотоны",
+          "codes": [
+            "4.1.1",
+            "4.1.2"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "em-spectrum"
+          ]
+        },
+        {
+          "slug": "photoeffect",
+          "title": "Фотоэффект, опыты Столетова, Эйнштейн",
+          "codes": [
+            "4.1.3",
+            "4.1.4"
+          ],
+          "level": "БУ, УУ",
+          "uuOnly": [
+            "4.1.3"
+          ],
+          "models": [
+            "photoeffect"
+          ]
+        },
+        {
+          "slug": "light-pressure",
+          "title": "Давление света",
+          "codes": [
+            "4.1.5"
+          ],
+          "level": "УУ",
+          "models": []
+        },
+        {
+          "slug": "atom",
+          "title": "Планетарная модель, постулаты Бора, спектры",
+          "codes": [
+            "4.2.1",
+            "4.2.2",
+            "4.2.3"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "bohr-levels"
+          ]
+        },
+        {
+          "slug": "nucleus",
+          "title": "Нуклонная модель ядра, изотопы",
+          "codes": [
+            "4.3.1"
+          ],
+          "level": "БУ, УУ",
+          "models": []
+        },
+        {
+          "slug": "radioactivity",
+          "title": "Радиоактивность, закон распада",
+          "codes": [
+            "4.3.2",
+            "4.3.3"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "decay"
+          ]
+        },
+        {
+          "slug": "nuclear-reactions",
+          "title": "Ядерные реакции, деление, синтез",
+          "codes": [
+            "4.3.4"
+          ],
+          "level": "БУ, УУ",
+          "models": [
+            "nuclear-balance"
+          ]
+        }
+      ]
+    }
+  ],
+  "extra": [
+    {
+      "slug": "all-formulas",
+      "title": "Все формулы на одной странице"
+    },
+    {
+      "slug": "task26",
+      "title": "Обоснование в задаче №26"
+    },
+    {
+      "slug": "constants",
+      "title": "Константы и справочные данные"
+    },
+    {
+      "slug": "astronomy",
+      "title": "Элементы астрономии (доп. справка)"
+    }
+  ]
+}

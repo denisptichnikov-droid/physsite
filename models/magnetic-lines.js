@@ -22,7 +22,7 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Качественная картина линий →B. У стрелок компасов красный конец — северный, он показывает направление →B. Стрелку A можно перетаскивать (или коснуться поля).',
+      caption: 'Качественная картина линий B. У стрелок компасов красный конец — северный, он показывает направление B. Стрелку A можно перетаскивать (или коснуться поля).',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.62, label: 'Линии магнитной индукции' });
     d.add(cv.destroy);
@@ -34,7 +34,7 @@ export default {
     let dir = 1;
     const probe = { ...DEF_PROBE };
 
-    const sChoice = L.choice(ui.controls, {
+    const sChoice = L.choice(ui.controls, { key: 'sChoice',
       label: 'Источник поля',
       options: [
         { value: 'wire', label: 'прямой провод' },
@@ -343,9 +343,9 @@ export default {
       const rows = [
         ['Источник', NAMES[src]],
         [src === 'magnet' ? 'Полюса' : 'Ток', cur],
-        ['Направление →B в точке A', bA],
+        ['Направление B в точке A', bA],
       ];
-      if (src === 'loop' || src === 'coil') rows.push(['→B в центре', N_RIGHT ? 'вправо →' : 'влево ←']);
+      if (src === 'loop' || src === 'coil') rows.push(['B в центре', N_RIGHT ? 'вправо →' : 'влево ←']);
       rows.push(['Правило', RULES[src]]);
       ro.set(rows);
     }

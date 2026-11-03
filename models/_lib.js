@@ -29,6 +29,21 @@
 export const prefersReducedMotion = () =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/**
+ * Пресет: applyPreset(el, 'v=2,mode=elastic') — выставить контролы модели по их key и вызвать их обработчики.
+ * Контролы получают key в опциях slider/choice/checkbox; список ключей — models/keys.json.
+ */
+export function applyPreset(el, set) {
+  for (const pair of String(set || '').split(',').filter(Boolean)) {
+    const [k, v] = pair.split('=').map((x) => x.trim());
+    const c = el.querySelector(`[data-key="${k}"]`);
+    if (!c) { console.warn(`Пресет: нет контрола «${k}»`); continue; }
+    if (c.tagName === 'FIELDSET') c.querySelector(`input[value="${v}"]`)?.click();
+    else if (c.type === 'checkbox') { if (c.checked !== (v === '1' || v === 'true')) c.click(); }
+    else { c.value = v; c.dispatchEvent(new Event('input', { bubbles: true })); c.dispatchEvent(new Event('change', { bubbles: true })); }
+  }
+}
+
 /** Значение CSS-переменной (например css('--accent')). */
 export function css(name, el = document.documentElement) {
   return getComputedStyle(el).getPropertyValue(name).trim();
@@ -95,7 +110,7 @@ export function layout(el, { caption } = {}) {
  * HiDPI-canvas, растягивается по ширине контейнера; height = width * aspect (в пределах minHeight..maxHeight).
  * Свойства width/height — в CSS-пикселях, ctx уже отмасштабирован под devicePixelRatio.
  */
-export function canvas(parent, { aspect = 0.6, minHeight = 180, maxHeight = 520, label = 'Рисунок модели' } = {}) {
+export function canvas(parent, { aspect = 0.6, minHeight = 180, maxHeight = Math.max(260, Math.round((window.innerHeight || 800) * 0.6)), label = 'Рисунок модели' } = {}) {
   const c = document.createElement('canvas');
   c.setAttribute('role', 'img');
   c.setAttribute('aria-label', label);
@@ -132,7 +147,7 @@ let uid = 0;
 const nextId = (p) => `${p}-${++uid}`;
 
 /** Слайдер с подписью и выводом значения. */
-export function slider(parent, { label, min, max, step = 1, value, unit = '', format, onInput } = {}) {
+export function slider(parent, { key, label, min, max, step = 1, value, unit = '', format, onInput } = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'model-control';
   const id = nextId('ms');
@@ -149,6 +164,7 @@ export function slider(parent, { label, min, max, step = 1, value, unit = '', fo
   input.type = 'range';
   input.id = id;
   Object.assign(input, { min, max, step, value });
+  if (key) input.dataset.key = key;
   wrap.append(lab, input);
   parent.append(wrap);
   const show = () => { out.textContent = (format ? format(+input.value) : fmt(+input.value)) + (unit ? ' ' + unit : ''); };
@@ -162,8 +178,9 @@ export function slider(parent, { label, min, max, step = 1, value, unit = '', fo
 }
 
 /** Группа переключателей (радиокнопки). options: [{value, label}] */
-export function choice(parent, { label, options, value, onChange } = {}) {
+export function choice(parent, { key, label, options, value, onChange } = {}) {
   const fs = document.createElement('fieldset');
+  if (key) fs.dataset.key = key;
   fs.className = 'model-control model-choice';
   const lg = document.createElement('legend');
   lg.className = 'model-control__label';
@@ -192,11 +209,12 @@ export function choice(parent, { label, options, value, onChange } = {}) {
 }
 
 /** Флажок. */
-export function checkbox(parent, { label, checked = false, onChange } = {}) {
+export function checkbox(parent, { key, label, checked = false, onChange } = {}) {
   const l = document.createElement('label');
   l.className = 'model-control model-check';
   const i = document.createElement('input');
   i.type = 'checkbox'; i.checked = checked;
+  if (key) i.dataset.key = key;
   i.addEventListener('change', () => onChange?.(i.checked));
   const s = document.createElement('span');
   s.innerHTML = label;

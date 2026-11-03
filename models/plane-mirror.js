@@ -78,13 +78,13 @@ export default {
     const state = { obj: [...START.v.obj], eye: [...START.v.eye] };
     let grabOff = [0, 0];
 
-    const chOr = L.choice(ui.controls, {
+    const chOr = L.choice(ui.controls, { key: 'chOr',
       label: 'Зеркало',
       options: [{ value: 'v', label: 'вертикальное' }, { value: 'h', label: 'горизонтальное' }],
       value: 'v',
       onChange: () => { resetPositions(); draw(); },
     });
-    const chObj = L.choice(ui.controls, {
+    const chObj = L.choice(ui.controls, { key: 'chObj',
       label: 'Предмет',
       options: [{ value: 'point', label: 'точка' }, { value: 'arrow', label: 'стрелка' }],
       value: 'point',
@@ -301,7 +301,7 @@ export default {
     });
 
     // клавиатура: фокус на рисунке, стрелки двигают выбранный объект (Shift — крупный шаг)
-    const chKey = L.choice(ui.controls, {
+    const chKey = L.choice(ui.controls, { key: 'chKey',
       label: 'Стрелки клавиатуры двигают',
       options: [{ value: 'obj', label: 'предмет' }, { value: 'eye', label: 'глаз' }],
       value: 'obj',

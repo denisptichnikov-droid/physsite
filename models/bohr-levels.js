@@ -2,6 +2,21 @@
 // Формулы — CLAUDE.md, часть B, 4.2.2, 4.2.3, 4.1.2.
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const H = 6.6e-34;   // Дж·с
 const C = 3e8;       // м/с
 const EV = 1.6e-19;  // Дж
@@ -37,7 +52,7 @@ function specColor(nm) {
 
 let selUid = 0;
 /** Локальный выпадающий список с <label> (в _lib.js его нет). */
-function select(parent, { label, options, value, onChange }) {
+function select(parent, { key, label, options, value, onChange }) {
   const wrap = document.createElement('div');
   wrap.className = 'model-control';
   const id = `bohr-sel-${++selUid}-${Math.random().toString(36).slice(2, 7)}`;
@@ -50,6 +65,7 @@ function select(parent, { label, options, value, onChange }) {
   const sel = document.createElement('select');
   sel.id = id;
   sel.className = 'model-select';
+  if (key) sel.dataset.key = key;
   for (const o of options) {
     const op = document.createElement('option');
     op.value = o.value; op.textContent = o.label;
@@ -69,8 +85,7 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Энергетические уровни атома водорода по Бору (масштаб по энергии нелинейный — чтобы различались верхние уровни). '
-        + 'Клик по уровню: первый клик выбирает начальный уровень, второй — конечный. Стрелка вниз — излучение фотона, вверх — поглощение.',
+      caption: 'Клик по уровню: первый — начальный, второй — конечный. Стрелка вниз — излучение фотона, вверх — поглощение. Масштаб по энергии нелинейный.',
     });
     const cvL = L.canvas(ui.stage, { aspect: 0.8, minHeight: 330, maxHeight: 480, label: 'Диаграмма уровней энергии атома водорода' });
     d.add(cvL.destroy);
@@ -79,10 +94,10 @@ export default {
     cvL.canvas.style.cursor = 'pointer';
 
     const opts = LEVELS.map((n) => ({ value: Number.isFinite(n) ? String(n) : 'inf', label: `n = ${nStr(n)} (${L.fmt(En(n))} эВ)` }));
-    const sFrom = select(ui.controls, { label: 'Начальный уровень n<sub>нач</sub>', options: opts, value: DEF.from, onChange: () => { nextPick = 'from'; update(); } });
-    const sTo = select(ui.controls, { label: 'Конечный уровень n<sub>кон</sub>', options: opts, value: DEF.to, onChange: () => { nextPick = 'from'; update(); } });
+    const sFrom = select(ui.controls, { key: 'from', label: 'Начальный уровень n<sub>нач</sub>', options: opts, value: DEF.from, onChange: () => { nextPick = 'from'; update(); } });
+    const sTo = select(ui.controls, { key: 'to', label: 'Конечный уровень n<sub>кон</sub>', options: opts, value: DEF.to, onChange: () => { nextPick = 'from'; update(); } });
     L.button(ui.controls, 'Сброс', reset, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     let nextPick = 'from';
     let levelYs = []; // [{n, y}] для клика
@@ -239,11 +254,9 @@ export default {
       const f = L.fmt;
       const rows = [
         ['Переход', `n = ${nStr(n1)} → n = ${nStr(n2)}`],
-        ['E<sub>нач</sub> = −13,6/n<sub>нач</sub>²', `${f(En(n1))} эВ`],
-        ['E<sub>кон</sub> = −13,6/n<sub>кон</sub>²', `${f(En(n2))} эВ`],
       ];
       if (n1 === n2) {
-        rows.push(['ΔE', 'переход не выбран (n_нач = n_кон)']);
+        rows.push(['ΔE', 'переход не выбран: уровни совпадают']);
       } else {
         const emit = En(n1) > En(n2);
         const dE = Math.abs(En(n1) - En(n2));
@@ -265,9 +278,13 @@ export default {
           ['Серия', `${SERIES[m]} (n → ${m})${Number.isFinite(big) ? '' : ', граница серии'} — ${region(lamN)} диапазон`],
         );
       }
-      rows.push(['Энергия ионизации из основного состояния', `13,6 эВ = ${f(E1 * EV)} Дж`]);
-      if (Number.isFinite(n1)) rows.push([`Энергия ионизации с уровня n = ${n1}`, `${f(-En(n1))} эВ`]);
-      ro.set(rows);
+      const extra = [
+        ['E<sub>нач</sub> = −13,6/n<sub>нач</sub>²', `${f(En(n1))} эВ`],
+        ['E<sub>кон</sub> = −13,6/n<sub>кон</sub>²', `${f(En(n2))} эВ`],
+        ['Энергия ионизации из основного состояния', `13,6 эВ = ${f(E1 * EV)} Дж`],
+      ];
+      if (Number.isFinite(n1)) extra.push([`Энергия ионизации с уровня n = ${n1}`, `${f(-En(n1))} эВ`]);
+      ro.set(rows, extra);
     }
 
     function update() {

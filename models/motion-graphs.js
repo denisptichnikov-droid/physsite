@@ -27,17 +27,16 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Вверху — тело на оси x. Площадь под графиком vₓ(t) равна перемещению sₓ (зелёная часть — выше оси, sₓ > 0; красная — ниже оси, sₓ < 0). '
-        + 'Наклон касательной к графику x(t) равен vₓ, наклон графика vₓ(t) равен aₓ. Путь l учитывает разворот тела.',
+      caption: 'Площадь под vₓ(t) — перемещение sₓ (зелёная — sₓ > 0, красная — sₓ < 0). Наклон x(t) — это vₓ, наклон vₓ(t) — это aₓ.',
     });
     const cv = L.canvas(ui.stage, { aspect: 1.15, minHeight: 360, maxHeight: 680, label: 'Тело на оси x и синхронные графики x(t), vₓ(t), aₓ(t)' });
     d.add(cv.destroy);
 
     let t = DEF.t;
-    const sX0 = L.slider(ui.controls, { label: 'Начальная координата x<sub>0</sub>', min: -10, max: 10, step: 1, value: DEF.x0, unit: 'м', onInput: draw });
-    const sV0 = L.slider(ui.controls, { label: 'Начальная скорость v<sub>0x</sub>', min: -10, max: 10, step: 1, value: DEF.v0, unit: 'м/с', onInput: draw });
-    const sA = L.slider(ui.controls, { label: 'Ускорение a<sub>x</sub>', min: -4, max: 4, step: 0.5, value: DEF.a, unit: 'м/с²', onInput: draw });
-    const sT = L.slider(ui.controls, { label: 'Момент времени t', min: 0, max: T_MAX, step: 'any', value: DEF.t, unit: 'с', onInput: (v) => { t = v; draw(); } });
+    const sX0 = L.slider(ui.controls, { key: 'sX0', label: 'Начальная координата x<sub>0</sub>', min: -10, max: 10, step: 1, value: DEF.x0, unit: 'м', onInput: draw });
+    const sV0 = L.slider(ui.controls, { key: 'sV0', label: 'Начальная скорость v<sub>0x</sub>', min: -10, max: 10, step: 1, value: DEF.v0, unit: 'м/с', onInput: draw });
+    const sA = L.slider(ui.controls, { key: 'sA', label: 'Ускорение a<sub>x</sub>', min: -4, max: 4, step: 0.5, value: DEF.a, unit: 'м/с²', onInput: draw });
+    const sT = L.slider(ui.controls, { key: 'sT', label: 'Момент времени t', min: 0, max: T_MAX, step: 'any', value: DEF.t, unit: 'с', onInput: (v) => { t = v; draw(); } });
 
     const anim = L.animator((dt) => {
       if (t >= T_MAX) t = 0; // повторный запуск после окончания — с начала

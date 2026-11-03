@@ -1,0 +1,979 @@
+/* =========================================================================
+   components.css — навигация, оглавление, шапка страницы, карточки формул,
+   callout'ы и свёрнутые блоки, задания к модели, задачи, «Проверь себя»,
+   пагинация, главная, поиск, «Все формулы», служебные состояния, печать.
+   ========================================================================= */
+
+/* ---------------- Кнопки ---------------- */
+.btn,
+.print-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1.2;
+  text-decoration: none;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.btn:hover,
+.print-btn:hover {
+  color: var(--text);
+  background: var(--surface-2);
+  text-decoration: none;
+}
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.btn--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--on-accent);
+}
+
+/* =========================================================================
+   Навигация в сайдбаре
+   ========================================================================= */
+.nav,
+.nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nav { font-size: var(--fs-sm); line-height: 1.4; }
+
+.nav__extra + .nav__section { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--border); }
+.nav__extra .nav__link { font-weight: var(--fw-medium); }
+
+.nav__section + .nav__section { margin-top: var(--space-1); }
+
+.nav__section-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  text-align: left;
+}
+.nav__section-btn::after {
+  content: "";
+  flex: none;
+  width: 0.45em;
+  height: 0.45em;
+  margin-left: auto;
+  margin-right: var(--space-1);
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform var(--dur) var(--ease);
+}
+.nav__section-btn[aria-expanded="true"]::after,
+.nav__section.is-open > .nav__section-btn::after { transform: rotate(45deg); }
+.nav__section-btn:hover { background: var(--surface-2); }
+
+.nav__num {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+.nav__section.is-open .nav__num { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+.nav__section > .nav__list { display: none; padding: var(--space-1) 0 var(--space-2) calc(1.6rem + var(--space-2)); }
+.nav__section.is-open > .nav__list { display: block; }
+
+.nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-min);
+  padding: 0.35rem var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  text-decoration: none;
+  position: relative;
+}
+.nav__link:hover { background: var(--surface-2); color: var(--text); }
+.nav__link.is-active,
+.nav__link[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: var(--fw-semibold);
+}
+.nav__link.is-active::before,
+.nav__link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* =========================================================================
+   Оглавление (toc)
+   ========================================================================= */
+.toc__title {
+  margin: 0 0 var(--space-2);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.toc__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+.toc__link {
+  display: block;
+  margin-left: -1px;
+  padding: 0.3rem var(--space-3);
+  border-left: 2px solid transparent;
+  color: var(--muted);
+  text-decoration: none;
+}
+.toc__link:hover { color: var(--text); border-left-color: var(--border-strong); }
+.toc__link--sub { padding-left: calc(var(--space-3) + var(--space-3)); font-size: 0.8125rem; }
+.toc__link--model {
+  padding-left: var(--space-3);
+  font-size: inherit;
+  color: var(--accent);
+  font-weight: var(--fw-semibold);
+}
+.toc__link--model::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.45em;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: 0.08em;
+}
+.toc__link.is-active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: var(--fw-semibold);
+}
+
+/* =========================================================================
+   Хлебные крошки и шапка страницы
+   ========================================================================= */
+.breadcrumbs {
+  margin-bottom: var(--space-4);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.breadcrumbs a { color: var(--muted); }
+.breadcrumbs a:hover { color: var(--accent); }
+.breadcrumbs a:not([href]) { text-decoration: none; }
+.breadcrumbs span { color: var(--text); }
+
+.page-header { margin-bottom: var(--space-5); }
+.page-header h1 { margin-bottom: var(--space-3); }
+/* =========================================================================
+   Карточка формулы
+   ========================================================================= */
+.formula-card {
+  margin: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-width: 0;
+  scroll-margin-top: calc(var(--topbar-h) + var(--space-4));
+}
+.formula-card__name {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-semibold);
+  line-height: 1.35;
+}
+.formula-card__body { min-width: 0; }
+.formula-card__body .katex-display { margin: var(--space-1) 0; padding: 2px 0; }
+.formula-card__body > p { margin: 0; }
+.formula-card__note {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: var(--fs-ui);
+  line-height: 1.45;
+}
+.formula-card__note p { margin: 0; }
+.formula-card:target,
+.formula-card.is-highlight { box-shadow: 0 0 0 3px var(--selection); }
+
+.formula-card--compact {
+  margin: 0;
+  break-inside: avoid;
+}
+.formula-card--compact .formula-card__name { font-size: var(--fs-xs); }
+.formula-card--compact .formula-card__note { font-size: var(--fs-xs); }
+
+/* Сетка раздела «Формулы». Обёртки в разметке нет: карточки — прямые потомки
+   .content, поэтому такая страница становится flex-контейнером с переносом.
+   Минимальная ширина карточки = ширина формулы (min-width:auto): короткие формулы
+   идут по две в строке, длинная занимает строку и скроллится внутри себя.
+   Margin во flex не схлопываются, поэтому отступы заданы только сверху. */
+@media screen {
+  @container page (min-width: 600px) {
+    .content:has(> .formula-card) {
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: var(--space-3);
+    }
+    .content:has(> .formula-card) > * {
+      flex: 0 0 100%;
+      min-width: 0;
+      max-width: 100%;
+      margin-bottom: 0;
+    }
+    .content:has(> .formula-card) > .formula-card {
+      flex: 1 1 calc(50% - var(--space-3) / 2);
+      min-width: auto;
+      margin-top: var(--space-2);
+    }
+    .content:has(> .formula-card) > .model-wrap {
+      flex: 0 0 calc(100% + 2 * var(--model-bleed));
+      max-width: none;
+    }
+    .content:has(> .formula-card) > p,
+    .content:has(> .formula-card) > ul,
+    .content:has(> .formula-card) > ol,
+    .content:has(> .formula-card) > pre,
+    .content:has(> .formula-card) > blockquote,
+    .content:has(> .formula-card) > table,
+    .content:has(> .formula-card) > .katex-display,
+    .content:has(> .formula-card) > .callout--fold,
+    .content:has(> .formula-card) > .task { margin-top: var(--space-4); }
+    .content:has(> .formula-card) > .callout:not(.callout--fold),
+    .content:has(> .formula-card) > .model-wrap,
+    .content:has(> .formula-card) > .callout:not(.callout--fold) + :not(h2, h3),
+    .content:has(> .formula-card) > .model-wrap + :not(h2, h3) { margin-top: var(--space-5); }
+    .content:has(> .formula-card) > .callout--fold + .callout--fold { margin-top: var(--space-2); }
+    .content:has(> .formula-card) > h2 { margin-top: var(--space-7); margin-bottom: 0; }
+    .content:has(> .formula-card) > h3 { margin-top: var(--space-6); margin-bottom: 0; }
+    .content:has(> .formula-card) > h4 { margin-top: var(--space-5); margin-bottom: 0; }
+    .content:has(> .formula-card) > hr { margin-top: var(--space-6); }
+    .content:has(> .formula-card) > .quiz { margin-top: var(--space-3); }
+    .content:has(> .formula-card) > .task-banks { margin-top: var(--space-6); }
+    .content:has(> .formula-card) > :first-child { margin-top: 0; }
+  }
+}
+
+/* =========================================================================
+   Callout'ы: tip / warning / theory / task26 / limits / measure
+   ========================================================================= */
+.callout {
+  --c: var(--callout-theory);
+  --c-bg: var(--callout-theory-bg);
+  margin: var(--space-5) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+  border-left: 4px solid var(--c);
+  border-radius: var(--radius);
+  background: var(--c-bg);
+  min-width: 0;
+}
+.callout--tip     { --c: var(--callout-tip);     --c-bg: var(--callout-tip-bg); }
+.callout--warning { --c: var(--callout-warning); --c-bg: var(--callout-warning-bg); }
+.callout--theory  { --c: var(--callout-theory);  --c-bg: var(--callout-theory-bg); }
+.callout--task26  { --c: var(--callout-task26);  --c-bg: var(--callout-task26-bg); }
+.callout--limits  { --c: var(--callout-limits);  --c-bg: var(--callout-limits-bg); }
+.callout--measure { --c: var(--callout-measure); --c-bg: var(--callout-measure-bg); }
+
+.callout__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  color: var(--c);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+/* Значок-маркер типа: текстовый символ, без эмодзи */
+.callout__title::before {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: var(--c);
+  color: var(--c-bg);
+  font-size: 0.8rem;
+  font-weight: var(--fw-bold);
+  line-height: 1;
+}
+.callout--tip .callout__title::before     { content: "\2605"; }  /* ★ */
+.callout--warning .callout__title::before { content: "!"; }
+.callout--theory .callout__title::before  { content: "i"; font-family: Georgia, serif; font-style: italic; }
+.callout--task26 .callout__title::before  { content: "26"; font-size: 0.62rem; }
+.callout--limits .callout__title::before  { content: "\2264"; } /* ≤ */
+.callout--measure .callout__title::before { content: "\00B1"; } /* ± */
+
+.callout__body > :last-child { margin-bottom: 0; }
+.callout__body > :first-child { margin-top: 0; }
+.callout__body p { margin-bottom: var(--space-3); }
+.callout__body ol,
+.callout__body ul { margin-bottom: var(--space-3); }
+.callout .formula-card { background: var(--surface); }
+
+/* --- Свёрнутый блок: details.callout.callout--X.callout--fold > summary.callout__title + .callout__body --- */
+.callout--fold {
+  margin: var(--space-2) 0;
+  padding: 0;
+  border-left-width: 3px;
+}
+.callout--fold > .callout__title {
+  margin: 0;
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius);
+  cursor: pointer;
+  list-style: none;
+  font-weight: var(--fw-semibold);
+}
+.callout--fold > .callout__title::-webkit-details-marker { display: none; }
+.callout--fold > .callout__title::before {
+  width: 1.15rem;
+  height: 1.15rem;
+  font-size: 0.7rem;
+}
+.callout--task26.callout--fold > .callout__title::before { font-size: 0.56rem; }
+.callout--fold > .callout__title::after {
+  content: "";
+  flex: none;
+  width: 0.45em;
+  height: 0.45em;
+  margin: 0 var(--space-1) 0 auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform var(--dur) var(--ease);
+}
+.callout--fold[open] > .callout__title::after { transform: rotate(-135deg) translate(-1px, -1px); }
+.callout--fold > .callout__title:hover { background: color-mix(in srgb, var(--c) 10%, transparent); }
+.callout--fold > .callout__title:focus-visible { outline-offset: -2px; border-radius: var(--radius); }
+.callout--fold[open] > .callout__title {
+  border-radius: var(--radius) var(--radius) 0 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--c) 25%, transparent);
+}
+.callout--fold > .callout__body {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+@media (pointer: coarse) {
+  .callout--fold > .callout__title { min-height: var(--tap-touch); }
+}
+
+/* =========================================================================
+   Задания к модели (.model-tasks) и кнопки-пресеты (.try-btn)
+   ========================================================================= */
+.model-tasks {
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+.model-tasks__title {
+  margin-bottom: var(--space-1);
+  color: var(--text);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
+  line-height: 1.35;
+}
+.content .model-tasks ol {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: try;
+}
+.content .model-tasks li {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-1) 0 var(--space-1) 2.15rem;
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  counter-increment: try;
+}
+.content .model-tasks li:has(> .try-btn) { padding: 0; }
+/* номер задания: кнопка читается как текст-задание, а не как кнопка-действие */
+.content .model-tasks li::before {
+  content: counter(try);
+  position: absolute;
+  left: 0.5rem;
+  top: 0.65rem;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  pointer-events: none;
+}
+.try-btn {
+  display: block;
+  width: 100%;
+  min-height: var(--tap-touch);
+  padding: var(--space-1) var(--space-2) var(--space-1) 2.15rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-normal);
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.try-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+.try-btn:active { background: var(--selection); }
+.try-btn:focus-visible { border-radius: var(--radius); }
+.try-btn .katex { white-space: normal; }
+
+/* «Проверить в модели» внутри разбора задачи: компактная ссылка-кнопка */
+.try-btn--open {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  padding: var(--space-1) var(--space-3);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: var(--fw-semibold);
+}
+.try-btn--open::before { content: "\25B8\00A0"; }
+.try-btn--open:hover { border-color: var(--accent); background: var(--accent-soft); }
+.try-btn--open:active { background: var(--accent-soft); }
+.content p:has(> .try-btn--open) { margin: var(--space-2) 0 var(--space-3); }
+
+/* =========================================================================
+   Задача как на ЕГЭ: section.task.task--base|mid|hard
+   Уровень различается текстом, числом точек, толщиной полосы и цветом.
+   ========================================================================= */
+.task {
+  --lv: var(--level-base);
+  --lv-bg: var(--level-base-bg);
+  --lv-bar: 2px;
+  --lv-marks: "\25CF\25CB\25CB";
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-left: var(--lv-bar) solid var(--lv);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-width: 0;
+  scroll-margin-top: calc(var(--topbar-h) + var(--space-4));
+  counter-reset: task-step;
+}
+.task--mid {
+  --lv: var(--level-mid);
+  --lv-bg: var(--level-mid-bg);
+  --lv-bar: 4px;
+  --lv-marks: "\25CF\25CF\25CB";
+}
+.task--hard {
+  --lv: var(--level-hard);
+  --lv-bg: var(--level-hard-bg);
+  --lv-bar: 6px;
+  --lv-marks: "\25CF\25CF\25CF";
+}
+.task__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.task__level {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.1em 0.55em;
+  border-radius: var(--radius-sm);
+  background: var(--lv-bg);
+  color: var(--lv);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  line-height: 1.5;
+}
+.task__level::before {
+  content: var(--lv-marks);
+  content: var(--lv-marks) / "";  /* точки декоративны: уровень назван текстом */
+  letter-spacing: 0.05em;
+  font-size: 0.85em;
+}
+.task__line {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+.content .task__title {
+  flex: 1 0 100%;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  line-height: 1.3;
+}
+.task__cond { min-width: 0; }
+.task__cond > :last-child { margin-bottom: 0; }
+
+.task__part {
+  min-width: 0;
+  margin-top: var(--space-3);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.task__part > :last-child { margin-bottom: 0; }
+.content .task__part p { margin-bottom: var(--space-2); }
+.content .task__part > p:last-child { margin-bottom: 0; }
+.task__part-title {
+  margin-bottom: var(--space-1);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  line-height: 1.35;
+}
+.task__part--step {
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--border);
+}
+.task__part--step .task__part-title::before {
+  counter-increment: task-step;
+  content: counter(task-step) ". ";
+  color: var(--accent);
+}
+/* Ловушка: заметная, но без тревожного красного; значок дублирует цвет */
+.task__part--trap {
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--trap);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--trap-bg);
+}
+.task__part--trap .task__part-title { color: var(--trap); }
+.task__part--trap .task__part-title::before { content: "!\00A0\00A0"; }
+/* Ответ: сплошная рамка и полужирный текст, виден при беглом просмотре */
+.task__part--answer {
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--answer);
+  border-radius: var(--radius);
+  background: var(--answer-bg);
+  font-weight: var(--fw-semibold);
+}
+.task__part--answer .task__part-title {
+  color: var(--answer);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.task__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.task__next,
+.task__all {
+  min-height: var(--tap-touch);
+  max-width: 100%;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1.3;
+  text-align: left;
+  white-space: normal;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.task__next {
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.task__next:hover { border-width: 2px; padding: calc(var(--space-1) - 1px) calc(var(--space-3) - 1px); }
+.task__all {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+.task__all:hover { color: var(--text); background: var(--surface-2); }
+.task__next:focus-visible,
+.task__all:focus-visible { border-radius: var(--radius); }
+@media (max-width: 479.98px) {
+  .task { padding: var(--space-3); }
+  .task__next, .task__all { flex: 1 1 100%; }
+}
+
+/* Настоящие задания ЕГЭ: спокойный блок в конце страницы */
+.task-banks {
+  margin-top: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.content .task-banks h2 {
+  margin: 0 0 var(--space-1);
+  padding: 0;
+  border: 0;
+  color: var(--text);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+}
+.content .task-banks p { margin: 0; }
+
+/* =========================================================================
+   «Проверь себя» (details.quiz)
+   ========================================================================= */
+.quiz {
+  margin: var(--space-3) 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.quiz > summary {
+  position: relative;
+  display: block; /* не flex: текст и инлайн-формула должны идти одной строкой с переносами */
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-4) var(--space-2) 2rem;
+  cursor: pointer;
+  font-weight: var(--fw-medium);
+  list-style: none;
+  border-radius: var(--radius);
+}
+.quiz > summary::-webkit-details-marker { display: none; }
+.quiz > summary::before {
+  content: "";
+  position: absolute;
+  left: 0.8rem;
+  top: 0.95em;
+  width: 0.5em;
+  height: 0.5em;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: rotate(-45deg);
+  transition: transform var(--dur) var(--ease);
+}
+.quiz[open] > summary::before { transform: rotate(45deg); }
+.quiz > summary:hover { background: var(--surface-2); }
+.quiz[open] > summary { border-bottom: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; }
+.quiz__answer {
+  padding: var(--space-3) var(--space-4);
+}
+.quiz__answer > :last-child { margin-bottom: 0; }
+
+/* =========================================================================
+   Пагинация
+   ========================================================================= */
+.pager {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+.pager__prev,
+.pager__next {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.pager__prev:hover,
+.pager__next:hover { border-color: var(--accent); background: var(--accent-soft); text-decoration: none; }
+.pager__next { justify-content: flex-end; text-align: right; }
+.pager span { color: var(--text); }
+@media (min-width: 600px) {
+  .pager { grid-template-columns: 1fr 1fr; }
+  .pager__next { grid-column: 2; }
+}
+
+/* =========================================================================
+   Главная
+   ========================================================================= */
+.home-hero {
+  margin: var(--space-2) 0 var(--space-6);
+  padding: var(--space-5) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+.home-hero h1 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-tight);
+  text-wrap: balance;
+}
+.home-hero p { margin: 0 0 var(--space-4); color: var(--muted); max-width: 60ch; }
+.home-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: var(--space-4);
+  margin: 0 0 var(--space-6);
+}
+.section-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.section-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  line-height: 1.3;
+  text-decoration: none;
+}
+.section-card__head:hover { background: var(--surface-2); color: var(--accent); }
+.section-card__num {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+.section-card__list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2) var(--space-2) var(--space-3);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+.section-card__list a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-min);
+  padding: 0.3rem var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  text-decoration: none;
+}
+.section-card__list a:hover { background: var(--surface-2); color: var(--accent); }
+
+/* =========================================================================
+   Результаты поиска
+   ========================================================================= */
+.search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.search-result {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-width: 0;
+}
+.search-result:hover { border-color: var(--border-strong); }
+.search-result__title {
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-md);
+  text-decoration: none;
+}
+.search-result__title:hover { text-decoration: underline; }
+.search-result__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.search-result__ctx {
+  margin-top: var(--space-2);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  overflow-x: auto;
+}
+.search-result__ctx .katex-display { margin: var(--space-1) 0; }
+.search-empty {
+  padding: var(--space-6) var(--space-4);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--muted);
+  text-align: center;
+}
+
+/* =========================================================================
+   «Все формулы»
+   ========================================================================= */
+.all-formulas { min-width: 0; }
+.af-section { margin-bottom: var(--space-7); }
+.af-section > h2 { margin-top: var(--space-6); }
+.af-sub { margin-bottom: var(--space-5); }
+.af-sub > h3 { margin: var(--space-5) 0 var(--space-3); }
+.af-sub > h3 a { color: var(--text); text-decoration: none; }
+.af-sub > h3 a:hover { color: var(--accent); text-decoration: underline; }
+.af-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+.print-btn { margin: 0 0 var(--space-4); }
+.print-btn::before { content: "\2399"; font-size: 1.1em; line-height: 1; } /* ⎙ */
+
+/* =========================================================================
+   Служебные состояния
+   ========================================================================= */
+.loading {
+  padding: var(--space-7) var(--space-4);
+  color: var(--muted);
+  text-align: center;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.not-found {
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+}
+.not-found h1 { margin-bottom: var(--space-3); }
+.not-found p { color: var(--muted); }
+
+/* =========================================================================
+   Печать: страница «Все формулы» и общие компоненты
+   ========================================================================= */
+@media print {
+  .formula-card,
+  .callout,
+  .quiz,
+  .search-result,
+  .section-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+  .formula-card { border: 1px solid #888; border-left: 2px solid #000; }
+  .task { break-inside: auto; background: #fff !important; }
+  /* flex-шапка в печати разрывалась: уровень оставался на одной странице, заголовок уезжал на другую */
+  .task__head { display: block; break-inside: avoid; page-break-inside: avoid; break-after: avoid; page-break-after: avoid; }
+  .task__line { margin-left: var(--space-2); }
+  .content .task__title { margin-top: 1mm; break-after: avoid; page-break-after: avoid; }
+  .task__cond { break-before: avoid; page-break-before: avoid; break-inside: avoid; page-break-inside: avoid; }
+  .task__part { break-inside: avoid; page-break-inside: avoid; }
+  /* Шаги решения и ответ печатаются всегда; [hidden] в base.css тоже !important, здесь специфичность выше */
+  .task__part[hidden] { display: block !important; }
+  .task__part--trap, .task__part--answer { background: #fff !important; }
+  .task__level { padding: 0; background: none; }
+
+  .task__actions,
+  .try-btn,
+  .model-tasks,
+  .task-banks,
+  .content p:has(> .try-btn--open) { display: none !important; }
+
+  /* Свёрнутые блоки печатаются раскрытыми там, где браузер это поддерживает */
+  .callout--fold::details-content { content-visibility: visible; display: block; }
+  .callout--fold > .callout__title::after { display: none; }
+
+  .callout { border: 1px solid #666; border-left: 3px solid #000; }
+  .callout__title::before { background: #000; color: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Ответы «Проверь себя» печатаются раскрытыми там, где браузер это поддерживает */
+  .quiz > summary::before { display: none; }
+  .quiz::details-content { content-visibility: visible; display: block; }
+
+  .all-formulas .af-section { margin-bottom: 6mm; }
+  .all-formulas .af-section + .af-section { break-before: auto; }
+  .all-formulas .af-section > h2 { font-size: 15pt; margin: 4mm 0 2mm; border-bottom: 1px solid #000; }
+  .all-formulas .af-sub > h3 { font-size: 11.5pt; margin: 3mm 0 1.5mm; }
+  .af-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* 1 колонка: длинные формулы не вылезают */
+    gap: 2mm;
+  }
+  .formula-card--compact { padding: 1.5mm 2.5mm; margin: 0; }
+  .formula-card--compact .formula-card__name { color: #000; font-size: 8.5pt; }
+  .formula-card--compact .formula-card__note { color: #222; font-size: 8pt; }
+  /* длинные формулы: без обрезки, при нехватке ширины — переносится карточка целиком */
+  .af-grid .katex-display { overflow: visible !important; font-size: 0.92em; max-width: 100%; }
+}

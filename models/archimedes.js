@@ -1,6 +1,21 @@
 // Модель «Закон Архимеда и условие плавания» (1.3.5, 1.3.6).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const G = 10; // м/с²
 const LIQUIDS = { water: 1000, kerosene: 800, mercury: 13600 }; // кг/м³
 const DEF = { liquid: 'water', rhoL: 1000, rhoB: 600, V: 2, hang: false }; // V — в дм³ (на слайдере)
@@ -37,12 +52,12 @@ export default {
     const d = L.disposer();
     d.add(() => { el.innerHTML = ''; el.classList.remove('model'); });
     const ui = L.layout(el, {
-      caption: 'Брусок в сосуде с жидкостью. F_A = ρ_ж·g·V_погр. Сравните плотности тела и жидкости: тонет, плавает внутри или всплывает.',
+      caption: 'Брусок в сосуде с жидкостью. FA = ρж·g·Vпогр. Сравните плотности тела и жидкости: тонет, плавает внутри или всплывает.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.75, label: 'Брусок в сосуде с жидкостью: сила тяжести, сила Архимеда, сила реакции дна или натяжения нити' });
     d.add(cv.destroy);
 
-    const liq = L.choice(ui.controls, {
+    const liq = L.choice(ui.controls, { key: 'liq',
       label: 'Жидкость',
       options: [
         { value: 'water', label: 'вода' },
@@ -53,7 +68,7 @@ export default {
       value: DEF.liquid,
       onChange: (v) => { if (LIQUIDS[v]) sRhoL.set(LIQUIDS[v]); update(); },
     });
-    const sRhoL = L.slider(ui.controls, {
+    const sRhoL = L.slider(ui.controls, { key: 'sRhoL',
       label: 'Плотность жидкости ρ<sub>ж</sub>', min: 500, max: 14000, step: 100, value: DEF.rhoL, unit: 'кг/м³',
       format: (v) => L.fmt(v, 0),
       onInput: (v) => {
@@ -62,19 +77,19 @@ export default {
         update();
       },
     });
-    const sRhoB = L.slider(ui.controls, {
+    const sRhoB = L.slider(ui.controls, { key: 'sRhoB',
       label: 'Плотность тела ρ<sub>т</sub>', min: 100, max: 20000, step: 100, value: DEF.rhoB, unit: 'кг/м³',
       format: (v) => L.fmt(v, 0), onInput: () => update(),
     });
-    const sV = L.slider(ui.controls, {
+    const sV = L.slider(ui.controls, { key: 'sV',
       label: 'Объём тела V', min: 0.1, max: V_MAX, step: 0.1, value: DEF.V, unit: 'дм³', onInput: () => update(),
     });
-    const cbHang = L.checkbox(ui.controls, { label: 'Тело на нити (динамометр)', checked: DEF.hang, onChange: () => update() });
+    const cbHang = L.checkbox(ui.controls, { key: 'cbHang', label: 'Тело на нити (динамометр)', checked: DEF.hang, onChange: () => update() });
     L.button(ui.controls, 'Сброс', () => {
       liq.set(DEF.liquid); sRhoL.set(DEF.rhoL); sRhoB.set(DEF.rhoB); sV.set(DEF.V); cbHang.set(DEF.hang);
       update();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function calc() {
       const rl = sRhoL.value, rb = sRhoB.value;
@@ -186,13 +201,15 @@ export default {
     function updateReadout() {
       const r = calc();
       const rows = [
+        ['F<sub>A</sub> = ρ<sub>ж</sub>gV<sub>погр</sub>', L.fmt(r.FA) + ' Н'],
+        ['mg', L.fmt(r.mg) + ' Н'],
+        ['Доля погружения V<sub>погр</sub>/V', L.fmt(r.frac, 3)],
+      ];
+      const extra = [
         ['ρ<sub>ж</sub>', L.fmt(r.rl, 0) + ' кг/м³'],
         ['ρ<sub>т</sub>', L.fmt(r.rb, 0) + ' кг/м³'],
         ['V', L.fmt(r.V, 4) + ' м³'],
         ['m = ρ<sub>т</sub>V', L.fmt(r.m, 3) + ' кг'],
-        ['mg', L.fmt(r.mg) + ' Н'],
-        ['Доля погружения V<sub>погр</sub>/V', L.fmt(r.frac, 3)],
-        ['F<sub>A</sub> = ρ<sub>ж</sub>gV<sub>погр</sub>', L.fmt(r.FA) + ' Н'],
       ];
       if (r.regime === 'sink') {
         rows.push(r.hang
@@ -202,11 +219,11 @@ export default {
         rows.push(['Нить', 'не натянута, T = 0 Н']);
       }
       let verdict;
-      if (r.regime === 'sink') verdict = 'ρ_т > ρ_ж — тонет' + (r.hang ? ' (удерживается нитью)' : ', лежит на дне');
-      else if (r.regime === 'inside') verdict = 'ρ_т = ρ_ж — плавает внутри жидкости';
-      else verdict = 'ρ_т < ρ_ж — всплывает и плавает на поверхности (F_A = mg)';
+      if (r.regime === 'sink') verdict = 'ρт > ρж — тонет' + (r.hang ? ' (удерживается нитью)' : ', лежит на дне');
+      else if (r.regime === 'inside') verdict = 'ρт = ρж — плавает внутри жидкости';
+      else verdict = 'ρт < ρж — всплывает и плавает на поверхности (FA = mg)';
       rows.push(['Вывод', verdict]);
-      ro.set(rows);
+      ro.set(rows, extra);
     }
 
     function update() { draw(); updateReadout(); }

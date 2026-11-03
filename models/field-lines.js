@@ -2,6 +2,21 @@
 // Масштаб: ширина рисунка = 1 м. Заряды — в нКл. Формулы: E = k|q|/r², φ = kq/r, суперпозиция (3.1.4–3.1.6).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const K = 9e9;        // Н·м²/Кл²
 const NC = 1e-9;      // 1 нКл в Кл
 const R_NEAR = 0.005; // м: ближе — считаем, что точка совпадает с зарядом
@@ -22,7 +37,7 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Перетаскивайте заряды и пробную точку A (или коснитесь поля, чтобы перенести A). Ширина рисунка — 1 м. Длина стрелки →E в точке A условная (нелинейная шкала).',
+      caption: 'Перетаскивайте заряды и пробную точку A (или коснитесь поля, чтобы перенести A). Ширина рисунка — 1 м. Длина стрелки E в точке A условная (нелинейная шкала).',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.62, label: 'Линии напряжённости электрического поля точечных зарядов' });
     d.add(cv.destroy);
@@ -34,7 +49,7 @@ export default {
     const probe = { ...DEF_PROBE };
     let count = DEF_COUNT;
 
-    const nChoice = L.choice(ui.controls, {
+    const nChoice = L.choice(ui.controls, { key: 'nChoice',
       label: 'Число зарядов',
       options: [{ value: '1', label: '1' }, { value: '2', label: '2' }, { value: '3', label: '3' }],
       value: String(DEF_COUNT),
@@ -44,9 +59,9 @@ export default {
       label: `Заряд q<sub>${i + 1}</sub>`, min: -3, max: 3, step: 0.5, value: ch.q, unit: 'нКл',
       onInput: (v) => { ch.q = v; schedule(); },
     }));
-    const eqCb = L.checkbox(ui.controls, { label: 'Эквипотенциальные линии (φ = const)', checked: false, onChange: () => schedule() });
+    const eqCb = L.checkbox(ui.controls, { key: 'eqCb', label: 'Эквипотенциальные линии (φ = const)', checked: false, onChange: () => schedule() });
     L.button(ui.controls, 'Сброс', reset, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function syncSliders() { qs.forEach((s, i) => { s.el.style.display = i < count ? '' : 'none'; }); }
 
@@ -280,6 +295,8 @@ export default {
       // пробная точка A
       const px = probe.u * W, py = probe.v * H;
       const rows = [];
+      const eRows = [];
+      const extra = [];
       let rmin = Infinity;
       act.forEach((ch) => {
         const r = Math.hypot(px - ch.x, py - ch.y) / S;
@@ -289,8 +306,8 @@ export default {
         const ch = charges[i];
         const r = Math.hypot(px - ch.u * W, py - ch.v * H) / S;
         const Ei = r > R_NEAR ? (K * Math.abs(ch.q * NC)) / (r * r) : NaN;
-        rows.push([`r<sub>${i + 1}</sub> (до q<sub>${i + 1}</sub>)`, L.fmt(r, 3) + ' м']);
-        rows.push([`E<sub>${i + 1}</sub> = k|q<sub>${i + 1}</sub>|/r<sub>${i + 1}</sub>²`, ch.q === 0 ? '0' : (r > R_NEAR ? L.fmt(Ei, 3) + ' В/м' : '— (A на заряде)')]);
+        extra.push([`r<sub>${i + 1}</sub> (до q<sub>${i + 1}</sub>)`, L.fmt(r, 3) + ' м']);
+        eRows.push([`E<sub>${i + 1}</sub> = k|q<sub>${i + 1}</sub>|/r<sub>${i + 1}</sub>²`, ch.q === 0 ? '0' : (r > R_NEAR ? L.fmt(Ei, 3) + ' В/м' : '— (A на заряде)')]);
       }
       if (rmin > R_NEAR) {
         const [ex, ey] = efield(act, px, py, S);
@@ -314,7 +331,7 @@ export default {
       ctx.restore();
       L.text(ctx, 'A', px - 16, py + 12, c.accent, { font: '700 14px system-ui, sans-serif' });
 
-      ro.set(rows);
+      ro.set(rows.concat(eRows), extra);
     }
 
     // ---------- перерисовка (не чаще кадра) ----------

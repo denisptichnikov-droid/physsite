@@ -4,6 +4,21 @@
 // При h₀ > 0 время полёта — корень уравнения y(T) = 0: T = (v₀sinα + √((v₀sinα)² + 2gh₀))/g, L = vₓT, H = h₀ + (v₀sinα)²/(2g).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const G = 10;
 const DEF = { v0: 20, al: 45, h0: 0 };
 const snap = (x) => (Math.abs(x) < 1e-9 ? 0 : x);
@@ -42,17 +57,16 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Формулы H = (v₀sinα)²/(2g), T = 2v₀sinα/g и L = v₀²sin2α/g верны только при h₀ = 0 (старт и финиш на одной высоте). '
-        + 'При h₀ > 0 время полёта находится из уравнения y(T) = 0, а L = v₀cosα·T. H — наибольшая высота над землёй. Масштаб по осям x и y одинаковый.',
+      caption: 'Формулы для H, T и L верны только при h₀ = 0; при h₀ > 0 время полёта находится из уравнения y(T) = 0. Масштаб по осям одинаковый.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.62, minHeight: 230, label: 'Траектория тела, брошенного под углом к горизонту, с векторами скорости' });
     d.add(cv.destroy);
 
     let t = 0, hold = 0;
-    const sV = L.slider(ui.controls, { label: 'Начальная скорость v<sub>0</sub>', min: 0, max: 30, step: 1, value: DEF.v0, unit: 'м/с', onInput: changed });
-    const sA = L.slider(ui.controls, { label: 'Угол α к горизонту', min: 0, max: 90, step: 1, value: DEF.al, unit: '°', onInput: changed });
-    const sH = L.slider(ui.controls, { label: 'Высота старта h<sub>0</sub>', min: 0, max: 50, step: 1, value: DEF.h0, unit: 'м', onInput: changed });
-    const sT = L.slider(ui.controls, { label: 'Момент времени t', min: 0, max: 1, step: 'any', value: 0, unit: 'с', onInput: (v) => { t = v; hold = 0; draw(); } });
+    const sV = L.slider(ui.controls, { key: 'sV', label: 'Начальная скорость v<sub>0</sub>', min: 0, max: 30, step: 1, value: DEF.v0, unit: 'м/с', onInput: changed });
+    const sA = L.slider(ui.controls, { key: 'sA', label: 'Угол α к горизонту', min: 0, max: 90, step: 1, value: DEF.al, unit: '°', onInput: changed });
+    const sH = L.slider(ui.controls, { key: 'sH', label: 'Высота старта h<sub>0</sub>', min: 0, max: 50, step: 1, value: DEF.h0, unit: 'м', onInput: changed });
+    const sT = L.slider(ui.controls, { key: 'sT', label: 'Момент времени t', min: 0, max: 1, step: 'any', value: 0, unit: 'с', onInput: (v) => { t = v; hold = 0; draw(); } });
 
     function changed() { hold = 0; draw(); }
 
@@ -75,7 +89,7 @@ export default {
       draw();
     }, { reset: true });
 
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
     let lastRO = '';
 
     function draw() {
@@ -188,18 +202,20 @@ export default {
       const vabs = Math.sqrt(vx * vx + vy * vy);
       const flat = h0 === 0;
       const rows = [
-        ['t<sub>п</sub> = v<sub>0</sub>sinα / g (время подъёма)', L.fmt(snap(p.tUp)) + ' с'],
         [flat ? 'T = 2v<sub>0</sub>sinα / g (время полёта)' : 'T — корень y(T) = 0 (время полёта)', L.fmt(snap(p.T)) + ' с'],
         [flat ? 'H = (v<sub>0</sub>sinα)² / (2g)' : 'H = h<sub>0</sub> + (v<sub>0</sub>sinα)² / (2g)', L.fmt(snap(p.H)) + ' м'],
         [flat ? 'L = v<sub>0</sub>²sin2α / g' : 'L = v<sub>0</sub>cosα · T', L.fmt(snap(p.L)) + ' м'],
         ['t', L.fmt(snap(t)) + ' с'],
-        ['x(t), y(t)', `${L.fmt(snap(xAt(t)))} м; ${L.fmt(snap(yAt(t)))} м`],
         ['v<sub>x</sub> = v<sub>0</sub>cosα', L.fmt(vx) + ' м/с'],
         ['v<sub>y</sub> = v<sub>0</sub>sinα − gt', L.fmt(vy) + ' м/с'],
         ['|v| = √(v<sub>x</sub>² + v<sub>y</sub>²)', L.fmt(snap(vabs)) + ' м/с'],
       ];
-      const key = JSON.stringify(rows);
-      if (key !== lastRO) { lastRO = key; ro.set(rows); }
+      const extra = [
+        ['t<sub>п</sub> = v<sub>0</sub>sinα / g (время подъёма)', L.fmt(snap(p.tUp)) + ' с'],
+        ['x(t), y(t)', `${L.fmt(snap(xAt(t)))} м; ${L.fmt(snap(yAt(t)))} м`],
+      ];
+      const key = JSON.stringify([rows, extra]);
+      if (key !== lastRO) { lastRO = key; ro.set(rows, extra); }
     }
 
     cv.onResize(draw);

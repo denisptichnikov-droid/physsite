@@ -2,6 +2,21 @@
 // Формулы (CLAUDE.md, B4): n₁ sin α = n₂ sin β; n = c/v; n_отн = n₂/n₁; sin α_пр = n₂/n₁ (n₁ > n₂).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const MEDIA = [
   { value: 'air', label: 'воздух (1,0)', n: 1.0, name: 'воздух' },
   { value: 'water', label: 'вода (1,33)', n: 1.33, name: 'вода' },
@@ -108,13 +123,13 @@ export default {
     d.add(cv.destroy);
 
     const opts = MEDIA.map((m) => ({ value: m.value, label: m.label }));
-    const ch1 = L.choice(ui.controls, { label: 'Среда 1 (сверху), n₁', options: opts, value: DEFAULTS.m1, onChange: draw });
-    const ch2 = L.choice(ui.controls, { label: 'Среда 2 (снизу), n₂', options: opts, value: DEFAULTS.m2, onChange: draw });
-    const sA = L.slider(ui.controls, { label: 'Угол падения α', min: 0, max: 90, step: 1, value: DEFAULTS.alpha, unit: '°', onInput: draw });
+    const ch1 = L.choice(ui.controls, { key: 'ch1', label: 'Среда 1 (сверху), n₁', options: opts, value: DEFAULTS.m1, onChange: draw });
+    const ch2 = L.choice(ui.controls, { key: 'ch2', label: 'Среда 2 (снизу), n₂', options: opts, value: DEFAULTS.m2, onChange: draw });
+    const sA = L.slider(ui.controls, { key: 'sA', label: 'Угол падения α', min: 0, max: 90, step: 1, value: DEFAULTS.alpha, unit: '°', onInput: draw });
     L.button(ui.controls, 'Сброс', () => {
       ch1.set(DEFAULTS.m1); ch2.set(DEFAULTS.m2); sA.set(DEFAULTS.alpha); draw();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     const medium = (v) => MEDIA.find((m) => m.value === v) || MEDIA[0];
 
@@ -202,9 +217,10 @@ export default {
         ['Угол отражения γ = α', L.fmt(aDeg, 1) + '°'],
         ['n<sub>отн</sub> = n₂/n₁', L.fmt(n2 / n1, 3)],
         ['Предельный угол α<sub>пр</sub>', crit !== null ? L.fmt(crit, 1) + '°' : 'нет (n₂ ≥ n₁)'],
+        ['Явление', tir ? 'полное внутреннее отражение' : 'отражение и преломление'],
+      ], [
         ['v₁ = c/n₁', L.fmt(C_LIGHT / n1) + ' м/с'],
         ['v₂ = c/n₂', L.fmt(C_LIGHT / n2) + ' м/с'],
-        ['Явление', tir ? 'полное внутреннее отражение' : 'отражение и преломление'],
       ]);
     }
 

@@ -1,6 +1,21 @@
 // Модель «Превращения механической энергии: горка/желоб и пружина» (1.4.6–1.4.8, 1.2.7, 1.2.8, 1.5.1).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const G = 10; // м/с²
 // Профиль желоба (м): левый склон y = HP·((A−x)/A)², горизонтальный участок длиной LH, правый склон симметричен.
 const HP = 2.5, AS = 2.5, LH = 2, XT = 2 * AS + LH;
@@ -59,14 +74,14 @@ export default {
     const d = L.disposer();
     d.add(() => { el.innerHTML = ''; el.classList.remove('model'); });
     const ui = L.layout(el, {
-      caption: 'Столбики показывают энергию в текущий момент. Без трения E₁ = E₂ (механическая энергия сохраняется); с трением E₁ = E₂ + Q. Нулевой уровень E_п тяж — горизонтальный участок (горка) или нижняя точка (вертикальная пружина).',
+      caption: 'Столбики — энергия в текущий момент. Без трения E₁ = E₂, с трением E₁ = E₂ + Q. Нулевой уровень Eп — горизонтальный участок или нижняя точка пружины.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.95, maxHeight: 580, label: 'Тело на горке или на пружине и столбчатая диаграмма энергий' });
     d.add(cv.destroy);
 
     const st = { x: 0, vx: 0, Q: 0, stopped: false, wait: 0, t: 0 };
 
-    const scene = L.choice(ui.controls, {
+    const scene = L.choice(ui.controls, { key: 'scene',
       label: 'Сценарий',
       options: [
         { value: 'hill', label: 'горка (желоб)' },
@@ -76,11 +91,11 @@ export default {
       value: DEF.scene,
       onChange: () => { syncVis(); restart(); },
     });
-    const sM = L.slider(ui.controls, { label: 'Масса m', min: 0.5, max: 5, step: 0.5, value: DEF.m, unit: 'кг', onInput: () => restart() });
-    const sH = L.slider(ui.controls, { label: 'Начальная высота h', min: 0.2, max: 2.4, step: 0.1, value: DEF.h, unit: 'м', onInput: () => restart() });
-    const sMu = L.slider(ui.controls, { label: 'Трение на горизонтальном участке μ', min: 0, max: 0.5, step: 0.05, value: DEF.mu, onInput: () => restart() });
-    const sK = L.slider(ui.controls, { label: 'Жёсткость k', min: 20, max: 400, step: 10, value: DEF.k, unit: 'Н/м', onInput: () => restart() });
-    const sA = L.slider(ui.controls, { label: 'Амплитуда A', min: 0.05, max: 0.3, step: 0.01, value: DEF.A, unit: 'м', onInput: () => restart() });
+    const sM = L.slider(ui.controls, { key: 'sM', label: 'Масса m', min: 0.5, max: 5, step: 0.5, value: DEF.m, unit: 'кг', onInput: () => restart() });
+    const sH = L.slider(ui.controls, { key: 'sH', label: 'Начальная высота h', min: 0.2, max: 2.4, step: 0.1, value: DEF.h, unit: 'м', onInput: () => restart() });
+    const sMu = L.slider(ui.controls, { key: 'sMu', label: 'Трение на горизонтальном участке μ', min: 0, max: 0.5, step: 0.05, value: DEF.mu, onInput: () => restart() });
+    const sK = L.slider(ui.controls, { key: 'sK', label: 'Жёсткость k', min: 20, max: 400, step: 10, value: DEF.k, unit: 'Н/м', onInput: () => restart() });
+    const sA = L.slider(ui.controls, { key: 'sA', label: 'Амплитуда A', min: 0.05, max: 0.3, step: 0.01, value: DEF.A, unit: 'м', onInput: () => restart() });
 
     let roTimer = 0; // обновление таблицы не чаще ~8 раз в секунду
     const anim = L.animator((dt) => { step(dt); draw(); roTimer += dt; if (roTimer > 0.12) { roTimer = 0; updateReadout(); } }, { autoplay: true });
@@ -90,7 +105,7 @@ export default {
       scene.set(DEF.scene); sM.set(DEF.m); sH.set(DEF.h); sMu.set(DEF.mu); sK.set(DEF.k); sA.set(DEF.A);
       syncVis(); restart(); play.sync();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function syncVis() {
       const hill = scene.value === 'hill';
@@ -333,49 +348,55 @@ export default {
 
     function updateReadout() {
       const r = calc();
-      let rows;
+      let rows, extra;
       if (r.sc === 'hill') {
         rows = [
-          ['E₁ = mgh (в начале)', L.fmt(r.E0) + ' Дж'],
           ['Высота сейчас', L.fmt(r.y) + ' м'],
           ['v сейчас', L.fmt(r.v) + ' м/с'],
           ['E<sub>к</sub> = mv²/2', L.fmt(r.Ek) + ' Дж'],
           ['E<sub>п</sub> = mgh', L.fmt(r.Ep) + ' Дж'],
           ['Q = μmg·s', L.fmt(r.Q) + ' Дж'],
           ['E<sub>к</sub> + E<sub>п</sub> + Q', L.fmt(r.Ek + r.Ep + r.Q) + ' Дж'],
+        ];
+        extra = [
+          ['E₁ = mgh (в начале)', L.fmt(r.E0) + ' Дж'],
           ['v внизу (первый раз) = √(2gh)', L.fmt(Math.sqrt(2 * G * r.h0)) + ' м/с'],
         ];
         if (r.mu > 0) {
-          rows.push(['Путь по шероховатому участку до остановки s = h/μ', L.fmt(r.h0 / r.mu) + ' м']);
+          extra.push(['Путь по шероховатому участку до остановки s = h/μ', L.fmt(r.h0 / r.mu) + ' м']);
           rows.push(['Закон', 'E₁ = E₂ + Q (есть трение)']);
         } else {
           rows.push(['Закон', 'E₁ = E₂ (трения нет)']);
         }
       } else if (r.sc === 'hspring') {
         rows = [
-          ['ω = √(k/m)', L.fmt(r.w) + ' рад/с'],
           ['x сейчас', L.fmt(r.x, 3) + ' м'],
           ['v<sub>x</sub> сейчас', L.fmt(r.vx) + ' м/с'],
           ['E<sub>к</sub> = mv²/2', L.fmt(r.Ek, 3) + ' Дж'],
           ['E<sub>п</sub> = kx²/2', L.fmt(r.Ep, 3) + ' Дж'],
           ['E = kA²/2', L.fmt(r.E, 3) + ' Дж'],
-          ['v<sub>max</sub> = ωA', L.fmt(r.w * r.A) + ' м/с'],
           ['Закон', 'E₁ = E₂ (трения нет)'],
+        ];
+        extra = [
+          ['ω = √(k/m)', L.fmt(r.w) + ' рад/с'],
+          ['v<sub>max</sub> = ωA', L.fmt(r.w * r.A) + ' м/с'],
         ];
       } else {
         rows = [
-          ['Δl₀ = mg/k (в равновесии)', L.fmt(r.dl0, 3) + ' м'],
           ['x сейчас (вниз от равновесия)', L.fmt(r.x, 3) + ' м'],
-          ['Деформация Δl = Δl₀ + x', L.fmt(r.dl, 3) + ' м'],
-          ['h над нижней точкой', L.fmt(r.hgt, 3) + ' м'],
           ['E<sub>к</sub> = mv²/2', L.fmt(r.Ek, 3) + ' Дж'],
           ['E<sub>упр</sub> = kΔl²/2', L.fmt(r.Eel, 3) + ' Дж'],
           ['E<sub>тяж</sub> = mgh', L.fmt(r.Egr, 3) + ' Дж'],
           ['E<sub>полн</sub>', L.fmt(r.Ek + r.Eel + r.Egr, 3) + ' Дж'],
           ['Закон', 'E₁ = E₂ (трения нет)'],
         ];
+        extra = [
+          ['Δl₀ = mg/k (в равновесии)', L.fmt(r.dl0, 3) + ' м'],
+          ['Деформация Δl = Δl₀ + x', L.fmt(r.dl, 3) + ' м'],
+          ['h над нижней точкой', L.fmt(r.hgt, 3) + ' м'],
+        ];
       }
-      ro.set(rows);
+      ro.set(rows, extra);
     }
 
     syncVis();

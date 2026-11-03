@@ -4,6 +4,21 @@
 // Если d/λ — целое, максимум m = d/λ шёл бы под 90° (на экран не попадает) → k_max = d/λ − 1 (см. CHECK в docs).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const RAD2DEG = 180 / Math.PI;
 const DEFAULTS = { N: 500, lam: 550, L: 1, white: false };
 const WHITE = [];
@@ -45,19 +60,19 @@ export default {
   mount(el /* , { theme } */) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Свет падает на решётку нормально. Углы на рисунке истинные, расстояние до экрана — в масштабе (ширина рисунка ≈ 2,4 м); максимумы, не попавшие на экран, уходят за край рисунка.',
+      caption: 'Свет падает на решётку нормально. Углы истинные, ширина рисунка около 2,4 м; дальние максимумы уходят за край.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.62, minHeight: 220, label: 'Дифракционная решётка, лучи к максимумам, экран' });
     d.add(cv.destroy);
 
-    const sN = L.slider(ui.controls, { label: 'Число штрихов на 1 мм, N', min: 100, max: 1000, step: 50, value: DEFAULTS.N, unit: 'мм⁻¹', onInput: draw });
-    const sL = L.slider(ui.controls, { label: 'Длина волны λ', min: 380, max: 760, step: 10, value: DEFAULTS.lam, unit: 'нм', onInput: draw });
-    const sD = L.slider(ui.controls, { label: 'Расстояние до экрана L', min: 0.2, max: 2, step: 0.1, value: DEFAULTS.L, unit: 'м', onInput: draw });
-    const cbW = L.checkbox(ui.controls, { label: 'белый свет (380–760 нм)', checked: DEFAULTS.white, onChange: draw });
+    const sN = L.slider(ui.controls, { key: 'sN', label: 'Число штрихов на 1 мм, N', min: 100, max: 1000, step: 50, value: DEFAULTS.N, unit: 'мм⁻¹', onInput: draw });
+    const sL = L.slider(ui.controls, { key: 'sL', label: 'Длина волны λ', min: 380, max: 760, step: 10, value: DEFAULTS.lam, unit: 'нм', onInput: draw });
+    const sD = L.slider(ui.controls, { key: 'sD', label: 'Расстояние до экрана L', min: 0.2, max: 2, step: 0.1, value: DEFAULTS.L, unit: 'м', onInput: draw });
+    const cbW = L.checkbox(ui.controls, { key: 'cbW', label: 'белый свет (380–760 нм)', checked: DEFAULTS.white, onChange: draw });
     L.button(ui.controls, 'Сброс', () => {
       sN.set(DEFAULTS.N); sL.set(DEFAULTS.lam); sD.set(DEFAULTS.L); cbW.set(DEFAULTS.white); draw();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function draw() {
       const { ctx, width: W, height: H } = cv;
@@ -181,24 +196,25 @@ export default {
 
       // таблица
       const rows = [['Период d = 1/N', L.fmt(dM) + ' м']];
+      const extra = [];
       if (!white) {
-        rows.push(['Длина волны λ', L.fmt(lamNm * 1e-9) + ' м']);
-        rows.push(['d/λ', L.fmt(km.q, 3)]);
+        extra.push(['Длина волны λ', L.fmt(lamNm * 1e-9) + ' м']);
+        extra.push(['d/λ', L.fmt(km.q, 3)]);
         rows.push(['k<sub>max</sub>', String(km.k) + (km.integer ? ' (d/λ — целое: максимум под 90° не наблюдается)' : '')]);
         rows.push(['Всего максимумов 2k<sub>max</sub> + 1', String(2 * km.k + 1)]);
-        rows.push(['m = 0', 'φ₀ = 0°, x₀ = 0']);
+        extra.push(['m = 0', 'φ₀ = 0°, x₀ = 0']);
         for (let m = 1; m <= Math.min(km.k, LIST_MAX); m++) {
           const ph = phi(N, lamNm, m);
           const x = Lm * Math.tan(ph / RAD2DEG);
           const xa = (m * lamNm * 1e-9 * Lm) / dM;
           rows.push([`m = ±${m}`, `φ = ${L.fmt(ph, 2)}°; x = ${L.fmt(x, 3)} м (малые углы: ${L.fmt(xa, 3)} м)`]);
         }
-        if (km.k > LIST_MAX) rows.push(['…', `и далее до m = ±${km.k}`]);
+        if (km.k > LIST_MAX) extra.push(['…', `и далее до m = ±${km.k}`]);
       } else {
         const kr = kMax(N, 760).k, kv = kMax(N, 380).k;
         rows.push(['Полных спектров (по красному 760 нм)', `${kr} с каждой стороны`]);
         rows.push(['Видна хотя бы фиолетовая часть до порядка', String(kv)]);
-        rows.push(['m = 0', 'белая полоса (все λ при φ = 0)']);
+        extra.push(['m = 0', 'белая полоса (все λ при φ = 0)']);
         for (let m = 1; m <= Math.min(kv, 3); m++) {
           const pv = phi(N, 380, m), pr = phi(N, 760, m);
           rows.push([`Спектр m = ±${m}`, `φ от ${L.fmt(pv, 1)}° (фиол.) до ${pr === null ? '90° — неполный' : L.fmt(pr, 1) + '° (красн.)'}`]);
@@ -209,7 +225,7 @@ export default {
         }
         rows.push(['Перекрытие спектров', overlap === null ? 'нет' : `спектры ${overlap}-го и ${overlap + 1}-го порядков перекрываются: (m+1)·380 нм < m·760 нм`]);
       }
-      ro.set(rows);
+      ro.set(rows, extra);
     }
 
     cv.onResize(draw);

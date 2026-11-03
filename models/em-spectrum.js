@@ -1,6 +1,21 @@
 // Модель «Шкала электромагнитных волн» (3.5.5, 3.5.6; энергия фотона — 4.1.2).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const C_LIGHT = 3e8; // м/с
 const H_PLANCK = 6.6e-34; // Дж·с
 const EV = 1.6e-19; // Дж
@@ -87,20 +102,19 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Шкала в логарифмическом масштабе: каждое деление — в 10 раз. Слева — длинные волны (малые частоты), справа — короткие (большие частоты и энергии фотонов). ' +
-        'Все электромагнитные волны в вакууме распространяются со скоростью c = 3·10⁸ м/с. Границы диапазонов условные, соседние диапазоны перекрываются.',
+      caption: 'Шкала логарифмическая: каждое деление — в 10 раз. Слева длинные волны, справа короткие. Границы диапазонов условные.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.55, minHeight: 250, maxHeight: 320, label: 'Шкала электромагнитных волн с маркером выбранной длины волны' });
     d.add(cv.destroy);
 
     // Слайдер хранит u = −lg λ (λ в метрах): движение вправо — к коротким волнам, как на шкале.
     const DEF_U = 6.26; // λ ≈ 550 нм
-    const sU = L.slider(ui.controls, {
+    const sU = L.slider(ui.controls, { key: 'sU',
       label: 'Длина волны λ', min: -LOG_MAX, max: -LOG_MIN, step: 0.01, value: DEF_U, unit: 'м',
       format: (u) => f3(10 ** -u), onInput: () => { updRO(); draw(); },
     });
     L.button(ui.controls, 'Сброс', () => { sU.set(DEF_U); updRO(); draw(); }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function phys() {
       const lam = 10 ** -sU.value;
@@ -112,15 +126,14 @@ export default {
     function updRO() {
       const p = phys();
       const rows = [
+        ['Диапазон', p.band.name],
         ['Длина волны λ', f3(p.lam) + ' м'],
         ['ν = <i>c</i>/λ', f3(p.nu) + ' Гц'],
-        ['<i>E</i> = <i>h</i>ν', f3(p.E) + ' Дж'],
-        ['<i>E</i> (в эВ)', f3(p.eV) + ' эВ'],
-        ['Диапазон', p.band.name],
+        ['<i>E</i> = <i>h</i>ν', f3(p.eV) + ' эВ'],
       ];
       if (p.band.name === 'видимый свет') rows.push(['Цвет (примерно)', colorName(p.lam * 1e9)]);
       rows.push(['Источники', p.band.src], ['Применение', p.band.use]);
-      ro.set(rows);
+      ro.set(rows, [['<i>E</i> (в джоулях)', f3(p.E) + ' Дж']]);
     }
 
     function draw() {

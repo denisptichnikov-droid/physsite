@@ -3,7 +3,42 @@
 // Знаки: f < 0 — мнимое изображение; рассеивающая линза — F < 0, D < 0.
 import * as L from './_lib.js';
 
-const DEFAULTS = { type: 'conv', F: 10, d: 25, H: 4 };
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
+/** Текстовая плашка с переносом по словам. */
+function noteBox(ctx, str, x, y, maxW, color, c) {
+  const font = '600 12px system-ui, sans-serif';
+  ctx.save();
+  ctx.font = font;
+  const lines = [];
+  let cur = '';
+  for (const w of str.split(' ')) {
+    const t = cur ? `${cur} ${w}` : w;
+    if (ctx.measureText(t).width > maxW - 12 && cur) { lines.push(cur); cur = w; } else cur = t;
+  }
+  if (cur) lines.push(cur);
+  const h = lines.length * 16 + 6;
+  ctx.globalAlpha = 0.92; ctx.fillStyle = c.bg; ctx.fillRect(x, y, maxW, h);
+  ctx.globalAlpha = 1; ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, maxW - 1, h - 1);
+  ctx.restore();
+  lines.forEach((ln, i) => L.text(ctx, ln, x + 6, y + 11 + i * 16, color, { font }));
+}
+
+const DEFAULTS = { type: 'conv', F: 10, d: 25, H: 4, oblique: false, ang: 15 };
+const OBL_Y = 6; // высота, на которой луч под углом падает на линзу, см
 const HALF_VIEW_CM = 42; // половина видимой ширины рисунка, см
 
 /** Расчёт изображения. Все длины в см; Fs — фокусное расстояние со знаком. */
@@ -62,27 +97,32 @@ function pointerDrag(cnv, d, { hit, move }) {
 export default {
   id: 'lens-builder',
   title: 'Построение изображения в линзе',
-  codes: ['3.6.6', '3.6.7'],
+  codes: ['3.6.6', '3.6.7', '3.6.8'],
   mount(el /* , { theme } */) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Перетащите предмет AB (за вершину — меняется и высота). Мнимые продолжения лучей и мнимое изображение — штрихом. Линейный масштаб рисунка одинаков по осям.',
+      caption: 'Тяни предмет AB мышью, за вершину — меняется и высота. Штрихом показаны мнимые продолжения лучей и мнимое изображение.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.55, minHeight: 210, label: 'Построение изображения в тонкой линзе' });
     d.add(cv.destroy);
 
-    const chType = L.choice(ui.controls, {
+    const chType = L.choice(ui.controls, { key: 'chType',
       label: 'Линза',
       options: [{ value: 'conv', label: 'собирающая' }, { value: 'div', label: 'рассеивающая' }],
       value: DEFAULTS.type, onChange: draw,
     });
-    const sF = L.slider(ui.controls, { label: 'Фокусное расстояние |F|', min: 2, max: 15, step: 0.5, value: DEFAULTS.F, unit: 'см', onInput: draw });
-    const sD = L.slider(ui.controls, { label: 'Расстояние до предмета d', min: 1, max: 40, step: 0.5, value: DEFAULTS.d, unit: 'см', onInput: draw });
-    const sH = L.slider(ui.controls, { label: 'Высота предмета H', min: 0.5, max: 6, step: 0.5, value: DEFAULTS.H, unit: 'см', onInput: draw });
+    const sF = L.slider(ui.controls, { key: 'sF', label: 'Фокусное расстояние |F|', min: 2, max: 15, step: 0.5, value: DEFAULTS.F, unit: 'см', onInput: draw });
+    const sD = L.slider(ui.controls, { key: 'sD', label: 'Расстояние до предмета d', min: 1, max: 40, step: 0.5, value: DEFAULTS.d, unit: 'см', onInput: draw });
+    const sH = L.slider(ui.controls, { key: 'sH', label: 'Высота предмета H', min: 0.5, max: 6, step: 0.5, value: DEFAULTS.H, unit: 'см', onInput: draw });
+    const cbObl = L.checkbox(ui.controls, { key: 'cbOblique', label: 'Луч под углом к оси, побочная ось и фокальная плоскость', checked: DEFAULTS.oblique, onChange: () => { syncObl(); draw(); } });
+    const sAng = L.slider(ui.controls, { key: 'sAng', label: 'Угол луча с главной осью φ', min: -30, max: 30, step: 1, value: DEFAULTS.ang, unit: '°', onInput: draw });
+    function syncObl() { sAng.el.style.display = cbObl.value ? '' : 'none'; }
+    syncObl();
     L.button(ui.controls, 'Сброс', () => {
-      chType.set(DEFAULTS.type); sF.set(DEFAULTS.F); sD.set(DEFAULTS.d); sH.set(DEFAULTS.H); draw();
+      chType.set(DEFAULTS.type); sF.set(DEFAULTS.F); sD.set(DEFAULTS.d); sH.set(DEFAULTS.H);
+      cbObl.set(DEFAULTS.oblique); sAng.set(DEFAULTS.ang); syncObl(); draw();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function geom() {
       const W = cv.width, H = cv.height;
@@ -149,6 +189,10 @@ export default {
       }
       ctx.restore();
 
+      // при включённом луче под углом обычные лучи приглушены
+      const oblique = cbObl.value;
+      ctx.save();
+      if (oblique) ctx.globalAlpha = 0.3;
       // лучи: точка A (вершина предмета) = (−d, H)
       const ax = -dd, ay = Hh;
       const rayColor = c.accent;
@@ -188,12 +232,17 @@ export default {
         }
       }
 
+      ctx.restore();
+
       // изображение
       let offScreen = false;
       if (!s.none) {
         const ix = s.f, ih = s.h;
         if (!s.real) {
+          ctx.save();
+          if (oblique) ctx.globalAlpha = 0.3;
           for (const [px, py] of lensPts) line(ctx, X(px), Y(py), X(ix), Y(ih), rayColor, { width: 1.1, dash: [4, 4] });
+          ctx.restore();
         }
         const imgCol = c.accel;
         const pxI = X(ix);
@@ -210,24 +259,60 @@ export default {
       L.text(ctx, 'A', X(ax) - 6, Y(ay) - 4, objCol, { font: fontI, align: 'right' });
       L.dot(ctx, X(ax), Y(ay), objCol, 4);
 
-      // подписи предельных случаев
-      const note = `600 ${Math.max(11, fs - 1)}px system-ui, sans-serif`;
+      // луч под углом: побочная ось через O параллельна лучу и пересекает фокальную плоскость в точке P,
+      // преломлённый луч (или его продолжение у рассеивающей линзы) проходит через P
+      let yP = 0;
+      if (oblique) {
+        const m0 = -Math.tan(L.deg(sAng.value)); // наклон луча на рисунке: φ > 0 — луч идёт вниз
+        const xL = -x0 / k - 2;
+        const col = c.text;
+        yP = m0 * Fs;
+        line(ctx, X(xL), Y(m0 * xL), X(xR), Y(m0 * xR), c.muted, { width: 1.3, dash: [10, 4, 2, 4] });
+        L.text(ctx, 'побочная ось', X(xL * 0.72), Y(m0 * xL * 0.72) + 13, c.muted, { font: `${Math.max(11, fs - 1)}px system-ui, sans-serif`, align: 'center' });
+        const fx = X(Fs);
+        line(ctx, fx, 4, fx, H - 4, c.muted, { width: 1.2, dash: [3, 4] });
+        const fpW = 112;
+        L.text(ctx, 'фокальная плоскость', fx + 4 + fpW > W ? fx - 4 : fx + 4, H - 12, c.muted, { font: '11px system-ui, sans-serif', align: fx + 4 + fpW > W ? 'right' : 'left' });
+        // падающий луч
+        line(ctx, X(xL), Y(OBL_Y + m0 * xL), X(0), Y(OBL_Y), col, { width: 2.4 });
+        const dirX = Fs, dirY = yP - OBL_Y; // направление на P от точки на линзе
+        const mOut = dirY / dirX;
+        line(ctx, X(0), Y(OBL_Y), X(xR), Y(OBL_Y + mOut * xR), col, { width: 2.4 });
+        if (!conv) line(ctx, X(0), Y(OBL_Y), X(Fs), Y(yP), col, { width: 1.3, dash: DASH });
+        L.dot(ctx, X(Fs), Y(yP), c.force, 5);
+        L.text(ctx, 'P', X(Fs) + 8, Y(yP) - 8, c.force, { font: `600 ${fs}px system-ui, sans-serif` });
+      }
+
+      // понятные подписи, когда изображения не видно
+      const noteW = Math.min(W - 16, 400);
       if (s.none) {
-        L.text(ctx, 'd = F: лучи после линзы параллельны —', 8, 14, c.force, { font: note });
-        L.text(ctx, 'изображение на бесконечности (его нет)', 8, 14 + fs + 3, c.force, { font: note });
+        noteBox(ctx, 'd = F: лучи после линзы параллельны, изображение на бесконечности (его нет).', 8, 8, noteW, c.force, c);
       } else if (offScreen) {
-        L.text(ctx, 'изображение за пределами рисунка', 8, 14, c.muted, { font: note });
+        const near = conv && Math.abs(dd - Fa) / Fa < 0.35;
+        const where = `|f| = ${L.fmt(Math.abs(s.f) / 100, 2)} м, h = ${L.fmt(Math.abs(s.h) / 100, 2)} м`;
+        noteBox(ctx, near
+          ? `Предмет почти в фокусе: лучи после линзы почти параллельны. Изображение далеко за краем рисунка (${where}).`
+          : `Изображение за краем рисунка (${where}).`, 8, 8, noteW, c.force, c);
+        // куда уходит изображение
+        const pxI = X(s.f);
+        if (pxI > W) L.arrow(ctx, W - 40, y0 - 18, W - 8, y0 - 18, c.accel, { width: 2.5 });
+        else if (pxI < 0) L.arrow(ctx, 40, y0 - 18, 8, y0 - 18, c.accel, { width: 2.5 });
+        else if (s.h > 0) L.arrow(ctx, pxI, 40, pxI, 8, c.accel, { width: 2.5 });
+        else L.arrow(ctx, pxI, H - 40, pxI, H - 8, c.accel, { width: 2.5 });
       }
 
       const m = (x) => x / 100; // см → м
-      ro.set([
-        ['Расстояние до предмета d', L.fmt(m(dd), 3) + ' м'],
+      const rows = [
         ['Расстояние до изображения f', s.none ? '∞ (изображения нет)' : L.fmt(m(s.f), 3) + ' м' + (s.real ? '' : ' (мнимое)')],
-        ['Фокусное расстояние F', L.fmt(m(Fs), 3) + ' м'],
-        ['Оптическая сила D = 1/F', L.fmt(1 / m(Fs), 2) + ' дптр'],
         ['Увеличение Γ = |f|/d', s.none ? '—' : L.fmt(s.G, 2)],
         ['Высота изображения h = ΓH', s.none ? '—' : L.fmt(m(Math.abs(s.h)), 3) + ' м'],
+        ['Оптическая сила D = 1/F', L.fmt(1 / m(Fs), 2) + ' дптр'],
         ['Изображение', describe(s)],
+      ];
+      if (oblique) rows.push(['Точка P от главной оси: |F|·tg φ', L.fmt(m(Math.abs(yP)), 3) + ' м']);
+      ro.set(rows, [
+        ['Расстояние до предмета d', L.fmt(m(dd), 3) + ' м'],
+        ['Фокусное расстояние F', L.fmt(m(Fs), 3) + ' м'],
       ]);
     }
 

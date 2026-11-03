@@ -5,6 +5,21 @@
 // Покой, если mg sinα ≤ μmg cosα (tgα ≤ μ): F_тр = mg sinα, a = 0. Иначе скольжение: F_тр = μmg cosα, a = g(sinα − μcosα).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const G = 10;
 const DEF = { al: 30, mu: 0.3, m: 1 };
 const SLOPE_M = 2.5; // условная длина наклонной для анимации, м
@@ -46,8 +61,7 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Ось x направлена вдоль наклонной вниз, ось y — перпендикулярно ей. Режим определяется сам: если tgα ≤ μ, брусок покоится и сила трения покоя '
-        + 'равна mg sinα (она меньше или равна μN); если tgα > μ — брусок скользит, F_тр = μN = μmg cosα. Длины векторов — в одном масштабе.',
+      caption: 'Ось x — вдоль наклонной вниз, ось y — перпендикулярно. Если tgα ≤ μ, брусок покоится; если tgα > μ — скользит. Векторы в одном масштабе.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.7, minHeight: 240, maxHeight: 480, label: 'Брусок на наклонной плоскости: силы тяжести, реакции опоры, трения и разложение силы тяжести по осям' });
     d.add(cv.destroy);
@@ -55,10 +69,10 @@ export default {
     let tau = 0, hold = 0; // время скольжения для анимации, с
     let doneSliding = false; // брусок доехал до низа наклонной
     const reset = () => { tau = 0; hold = 0; };
-    const sAl = L.slider(ui.controls, { label: 'Угол наклона α', min: 0, max: 90, step: 1, value: DEF.al, unit: '°', onInput: () => { reset(); draw(); } });
-    const sMu = L.slider(ui.controls, { label: 'Коэффициент трения μ', min: 0, max: 1, step: 0.05, value: DEF.mu, onInput: () => { reset(); draw(); } });
-    const sM = L.slider(ui.controls, { label: 'Масса бруска m', min: 0.1, max: 10, step: 0.1, value: DEF.m, unit: 'кг', onInput: draw });
-    const cbDec = L.checkbox(ui.controls, { label: 'Разложить m<i>g</i> по осям x и y', checked: true, onChange: draw });
+    const sAl = L.slider(ui.controls, { key: 'sAl', label: 'Угол наклона α', min: 0, max: 90, step: 1, value: DEF.al, unit: '°', onInput: () => { reset(); draw(); } });
+    const sMu = L.slider(ui.controls, { key: 'sMu', label: 'Коэффициент трения μ', min: 0, max: 1, step: 0.05, value: DEF.mu, onInput: () => { reset(); draw(); } });
+    const sM = L.slider(ui.controls, { key: 'sM', label: 'Масса бруска m', min: 0.1, max: 10, step: 0.1, value: DEF.m, unit: 'кг', onInput: draw });
+    const cbDec = L.checkbox(ui.controls, { key: 'cbDec', label: 'Разложить m<i>g</i> по осям x и y', checked: true, onChange: draw });
 
     const anim = L.animator((dt) => {
       const p = physics(sAl.value, sMu.value, sM.value);
@@ -77,7 +91,7 @@ export default {
       draw();
     }, { reset: true });
 
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
     let lastRO = '';
 
     function draw() {
@@ -175,15 +189,15 @@ export default {
       const rows = [
         ['Режим', p.rest ? 'покой (tgα ≤ μ)' : 'скольжение (tgα > μ)'],
         ['tgα', tg + '  (μ = ' + L.fmt(mu) + ')'],
-        ['mg', L.fmt(p.mg) + ' Н'],
         ['N = mg cosα', L.fmt(snap(p.N)) + ' Н'],
         ['mg sinα (вдоль наклонной)', L.fmt(snap(p.mg * p.sa)) + ' Н'],
         ['μN (наибольшая сила трения покоя)', L.fmt(snap(p.Fmax)) + ' Н'],
         [p.rest ? 'F<sub>тр</sub> покоя = mg sinα' : 'F<sub>тр</sub> скольжения = μmg cosα', L.fmt(snap(p.Ftr)) + ' Н'],
         [p.rest ? 'a' : 'a = g(sinα − μcosα)', L.fmt(snap(p.a)) + ' м/с²'],
       ];
-      const key = JSON.stringify(rows);
-      if (key !== lastRO) { lastRO = key; ro.set(rows); }
+      const extra = [['mg', L.fmt(p.mg) + ' Н']];
+      const key = JSON.stringify([rows, extra]);
+      if (key !== lastRO) { lastRO = key; ro.set(rows, extra); }
     }
 
     cv.onResize(draw);

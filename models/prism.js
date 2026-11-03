@@ -3,6 +3,21 @@
 // Геометрия: β₂ = A − β₁, отклонение δ = α + γ − A. n(λ): 1,51 (красный 700 нм) … 1,53 (фиолетовый 400 нм) — условно, см. CHECK в docs.
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const RAD2DEG = 180 / Math.PI;
 const N_RED = 1.51, N_VIOLET = 1.53;
 const LAMS = [700, 620, 580, 530, 470, 440, 400];
@@ -60,15 +75,15 @@ export default {
   mount(el /* , { theme } */) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Белый луч падает на левую грань. Показатель преломления стекла зависит от λ (условно 1,51 для красного … 1,53 для фиолетового), поэтому фиолетовый отклоняется сильнее.',
+      caption: 'Белый луч падает на левую грань. Показатель преломления зависит от λ (условно 1,51 для красного, 1,53 для фиолетового), поэтому фиолетовый отклоняется сильнее.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.62, minHeight: 220, label: 'Разложение белого света призмой' });
     d.add(cv.destroy);
 
-    const sA = L.slider(ui.controls, { label: 'Преломляющий угол призмы A', min: 30, max: 70, step: 5, value: DEFAULTS.A, unit: '°', onInput: draw });
-    const sAl = L.slider(ui.controls, { label: 'Угол падения α', min: 0, max: 90, step: 1, value: DEFAULTS.alpha, unit: '°', onInput: draw });
+    const sA = L.slider(ui.controls, { key: 'sA', label: 'Преломляющий угол призмы A', min: 30, max: 70, step: 5, value: DEFAULTS.A, unit: '°', onInput: draw });
+    const sAl = L.slider(ui.controls, { key: 'sAl', label: 'Угол падения α', min: 0, max: 90, step: 1, value: DEFAULTS.alpha, unit: '°', onInput: draw });
     L.button(ui.controls, 'Сброс', () => { sA.set(DEFAULTS.A); sAl.set(DEFAULTS.alpha); draw(); }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function draw() {
       const { ctx, width: W, height: H } = cv;
@@ -164,14 +179,15 @@ export default {
       const f = (x) => (x === null ? '—' : L.fmt(x, 2) + '°');
       const g = (t, x) => (t.base ? 'на основание' : t.tir ? 'ПВО' : f(x));
       ro.set([
-        ['Угол падения α / угол призмы A', `${L.fmt(alpha, 0)}° / ${L.fmt(A, 0)}°`],
         ['n красн. / фиол.', `${L.fmt(N_RED)} / ${L.fmt(N_VIOLET)}`],
         ['β₁ (кр / ф)', `${f(r.b1)} / ${f(v.b1)}`],
-        ['β₂ = A − β₁ (кр / ф)', `${r.base ? '—' : f(r.b2)} / ${v.base ? '—' : f(v.b2)}`],
-        ['α<sub>пр</sub> стекла (кр / ф)', `${f(Math.asin(1 / N_RED) * RAD2DEG)} / ${f(Math.asin(1 / N_VIOLET) * RAD2DEG)}`],
         ['γ — угол выхода (кр / ф)', `${g(r, r.gamma)} / ${g(v, v.gamma)}`],
         ['δ = α + γ − A (кр / ф)', `${g(r, r.delta)} / ${g(v, v.delta)}`],
         ['Δδ = δ<sub>ф</sub> − δ<sub>кр</sub>', r.delta !== null && v.delta !== null && !r.base && !v.base ? L.fmt(v.delta - r.delta, 2) + '°' : '—'],
+      ], [
+        ['Угол падения α / угол призмы A', `${L.fmt(alpha, 0)}° / ${L.fmt(A, 0)}°`],
+        ['β₂ = A − β₁ (кр / ф)', `${r.base ? '—' : f(r.b2)} / ${v.base ? '—' : f(v.b2)}`],
+        ['α<sub>пр</sub> стекла (кр / ф)', `${f(Math.asin(1 / N_RED) * RAD2DEG)} / ${f(Math.asin(1 / N_VIOLET) * RAD2DEG)}`],
       ]);
     }
 

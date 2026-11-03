@@ -13,15 +13,14 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Скорость →v направлена по касательной к окружности, центростремительное ускорение →a_цс — к центру. '
-        + 'Радиус и длины векторов на рисунке условные (длина →v растёт с v, длина →a_цс — с a_цс); при ω > 3 рад/с анимация показана замедленно.',
+      caption: 'Скорость v направлена по касательной, ускорение aцс — к центру. Радиус и длины векторов на рисунке условные; при ω > 3 рад/с анимация замедлена.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.75, minHeight: 240, maxHeight: 460, label: 'Точка, равномерно движущаяся по окружности, с векторами скорости и центростремительного ускорения' });
     d.add(cv.destroy);
 
     let phi = Math.PI / 4;
-    const sR = L.slider(ui.controls, { label: 'Радиус R', min: 0.5, max: 5, step: 0.1, value: DEF.R, unit: 'м', onInput: draw });
-    const sV = L.slider(ui.controls, { label: 'Скорость v', min: 0, max: V_MAX, step: 0.5, value: DEF.v, unit: 'м/с', onInput: draw });
+    const sR = L.slider(ui.controls, { key: 'sR', label: 'Радиус R', min: 0.5, max: 5, step: 0.1, value: DEF.R, unit: 'м', onInput: draw });
+    const sV = L.slider(ui.controls, { key: 'sV', label: 'Скорость v', min: 0, max: V_MAX, step: 0.5, value: DEF.v, unit: 'м/с', onInput: draw });
 
     const anim = L.animator((dt) => {
       const w = sV.value / sR.value;

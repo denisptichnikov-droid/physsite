@@ -3,6 +3,41 @@
 // Табличные p_нас — CHECK в docs/humidity.md.
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
+/** Текстовая плашка с переносом по словам. */
+function noteBox(ctx, str, x, bottom, maxW, color, c) {
+  const font = '600 12px system-ui, sans-serif';
+  ctx.save();
+  ctx.font = font;
+  const lines = [];
+  let cur = '';
+  for (const w of str.split(' ')) {
+    const t = cur ? `${cur} ${w}` : w;
+    if (ctx.measureText(t).width > maxW - 12 && cur) { lines.push(cur); cur = w; } else cur = t;
+  }
+  if (cur) lines.push(cur);
+  const h = lines.length * 16 + 6;
+  const y = bottom - h;
+  ctx.globalAlpha = 0.92; ctx.fillStyle = c.bg; ctx.fillRect(x, y, maxW, h);
+  ctx.globalAlpha = 1; ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, maxW - 1, h - 1);
+  ctx.restore();
+  lines.forEach((ln, i) => L.text(ctx, ln, x + 6, y + 11 + i * 16, color, { font }));
+}
+
 const R = 8.31;
 const MU = 0.018;      // кг/моль
 const V0 = 0.01;       // начальный объём, м³ (10 л)
@@ -12,6 +47,8 @@ const TABLE = [
 ];
 const DEF = { t: '20', phi0: 40, V: 10 };
 const N_MAX = 44;
+const K_B = 1.38e-23;   // постоянная Больцмана, Дж/К
+const MOMENT_L = 0.15; // «момент насыщения» на рисунке: |V − V_нас| ≤ 0,15 л
 
 const SUPM = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
 function sci(x, d = 3) {
@@ -47,26 +84,28 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Водяной пар под поршнем сжимают при постоянной температуре. Пока пар ненасыщенный, p = p₀V₀/V растёт; '
-        + 'когда p достигает p_нас, давление перестаёт меняться — лишний пар конденсируется. Слой воды на рисунке сильно увеличен.',
+      caption: 'Пар сжимают при постоянной температуре. Когда p доходит до pнас, лишний пар конденсируется: концентрация больше не растёт, и давление тоже. Слой воды сильно увеличен.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.62, minHeight: 270, maxHeight: 460, label: 'Цилиндр с паром и график p(V)' });
     d.add(cv.destroy);
 
     let tC = +DEF.t;
-    const ch = L.choice(ui.controls, {
+    const ch = L.choice(ui.controls, { key: 'ch',
       label: 'Температура t (T = const)',
       options: TABLE.map((r) => ({ value: String(r.t), label: `${r.t} °C` })),
       value: DEF.t,
       onChange: (v) => { tC = +v; draw(); },
     });
-    const sPhi = L.slider(ui.controls, { label: 'Начальная влажность φ<sub>0</sub> (при V<sub>0</sub> = 10 л)', min: 10, max: 100, step: 5, value: DEF.phi0, unit: '%', onInput: () => draw() });
-    const sV = L.slider(ui.controls, { label: 'Объём V', min: 1, max: 10, step: 0.1, value: DEF.V, unit: 'л', onInput: () => draw() });
-    const ro = L.readout(ui.readout);
+    const sPhi = L.slider(ui.controls, { key: 'sPhi', label: 'Начальная влажность φ<sub>0</sub> (при V<sub>0</sub> = 10 л)', min: 10, max: 100, step: 5, value: DEF.phi0, unit: '%', onInput: () => draw() });
+    const sV = L.slider(ui.controls, { key: 'sV', label: 'Объём V', min: 1, max: 10, step: 0.1, value: DEF.V, unit: 'л', onInput: () => draw() });
+    const ro = moreReadout(ui.readout);
 
     const parts = Array.from({ length: N_MAX }, () => ({ x: Math.random(), y: Math.random(), a: Math.random() * Math.PI * 2 }));
     let box = { w: 100, h: 100 };
+    // обмен молекулами на поверхности воды: вверх вылетают, вниз возвращаются поровну
+    const swap = Array.from({ length: 8 }, (_, i) => ({ up: i % 2 === 0, x: (i + 0.5) / 8, ph: i / 8 }));
     const anim = L.animator((dt) => {
+      for (const q of swap) q.ph = (q.ph + dt * 0.7) % 1;
       const v = 40 * Math.sqrt((tC + 273) / 300);
       const bw = Math.max(box.w, 1), bh = Math.max(box.h, 1);
       for (const q of parts) {
@@ -86,7 +125,7 @@ export default {
     function drawCylinder(ctx, r, s, c) {
       const cw = Math.min(r.w * 0.62, 110);
       const x0 = r.x + (r.w - cw) / 2;
-      const top = r.y + 20, bottom = r.y + r.h - 24;
+      const top = r.y + 20, bottom = r.y + r.h - 38;
       const hMax = bottom - top - 10;
       const V = sV.value / 1000;
       const gh = Math.max(10, (hMax * V) / V0);
@@ -103,6 +142,16 @@ export default {
         const q = parts[i];
         L.dot(ctx, x0 + 5 + q.x * box.w, py + 5 + q.y * box.h, c.accent, 2.3);
       }
+      // обмен молекулами: вылетают и возвращаются поровну, поэтому концентрация пара не меняется
+      if (wh > 0.5) {
+        const surf = bottom - wh;
+        const hx = Math.min(30, Math.max(8, gh - wh - 6));
+        for (const q of swap) {
+          const y = q.up ? surf - q.ph * hx : surf - hx + q.ph * hx;
+          L.dot(ctx, x0 + 6 + q.x * (cw - 12), y, q.up ? c.force : c.fieldB, 2.6);
+        }
+        L.text(ctx, 'вылет = возврат', x0 + cw / 2, bottom + 26, c.text, { font: '10px system-ui, sans-serif', align: 'center' });
+      }
       // капли на стенках
       const drops = Math.ceil(8 * frac);
       for (let i = 0; i < drops; i++) {
@@ -117,6 +166,22 @@ export default {
       ctx.fillRect(x0 + cw / 2 - 2, top - 14, 4, Math.max(0, py - 8 - (top - 14)));
       ctx.restore();
       L.text(ctx, `t = ${tC} °C`, x0 + cw / 2, bottom + 13, c.text, { font: '600 12px system-ui, sans-serif', align: 'center' });
+      // где начнётся конденсация; в момент насыщения цилиндр подсвечен
+      const VsL = s.Vs * 1000;
+      if (sPhi.value < 100) {
+        const ys = bottom - (hMax * s.Vs) / V0;
+        ctx.save();
+        ctx.strokeStyle = c.force; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(x0 - 5, ys); ctx.lineTo(x0 + cw + 5, ys); ctx.stroke();
+        ctx.restore();
+        if (Math.abs(sV.value - VsL) > MOMENT_L) L.text(ctx, 'V_{нас}', x0 + cw - 3, ys - 9, c.force, { font: '600 11px system-ui, sans-serif', align: 'right' });
+        if (Math.abs(sV.value - VsL) <= MOMENT_L) {
+          ctx.save();
+          ctx.strokeStyle = c.force; ctx.lineWidth = 4; ctx.globalAlpha = 0.65;
+          ctx.strokeRect(x0 - 3, py - 3, cw + 6, gh + 6);
+          ctx.restore();
+        }
+      }
     }
 
     let lastKey = '';
@@ -176,19 +241,38 @@ export default {
       L.text(ctx, '1', g.X(10) + 2, g.Y(pk(10)) - 12, c.text, { font: '600 12px system-ui, sans-serif' });
       L.dot(ctx, g.X(sV.value), g.Y(s.p / 1000), c.accent, 5);
 
+      const sat = V <= s.Vs + 1e-12;
+      const moment = sPhi.value < 100 && Math.abs(sV.value - VsL) <= MOMENT_L;
+      if (sPhi.value < 100) {
+        const xs = g.X(VsL), ys = g.Y(s.pn / 1000);
+        ctx.save();
+        ctx.strokeStyle = c.force; ctx.lineWidth = moment ? 3 : 2;
+        ctx.beginPath(); ctx.arc(xs, ys, moment ? 10 : 6, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+        const lab = 'пар стал насыщенным';
+        ctx.save(); ctx.font = '600 11px system-ui, sans-serif'; const lw = ctx.measureText(lab).width; ctx.restore();
+        const lxx = L.clamp(xs - lw / 2, rect.x + 2, rect.x + rect.w - lw);
+        L.text(ctx, lab, lxx, ys - 24, c.force, { font: '600 11px system-ui, sans-serif' });
+      }
+      if (moment) noteBox(ctx, 'Вот он, момент: пар стал насыщенным, начинается конденсация', rect.x + 6, g.Y(0) - 6, rect.w - 12, c.force, c);
+      else if (sat) noteBox(ctx, 'Концентрация не меняется, поэтому p = nkT не растёт', rect.x + 6, g.Y(0) - 6, rect.w - 12, c.accent, c);
+
       const key = `${tC}|${sPhi.value}|${sV.value}`;
       if (key === lastKey) return;
       lastKey = key;
-      const sat = V < s.Vs - 1e-12 || sPhi.value >= 100;
+      const n = s.p / (K_B * s.T); // p = nkT
       ro.set([
-        ['Температура', `${s.T} К (${tC} °C)`],
-        ['Объём V', `${sci(V)} м³ (${L.fmt(sV.value, 1)} л)`],
         ['p<sub>пара</sub>', `${pa(s.p)} Па`],
         ['p<sub>нас</sub> (табл.)', `${pa(s.pn)} Па`],
         ['φ = p/p<sub>нас</sub>·100 %', `${L.fmt(s.phi, 1)} %`],
-        ['Состояние', sat ? 'пар насыщенный, при сжатии идёт конденсация' : 'пар ненасыщенный, p = p₀V₀/V'],
+        ['Концентрация n = p/(kT)', `${sci(n)} м⁻³`],
+        [sat ? 'Пар насыщенный' : 'Пар ненасыщенный', sat ? 'концентрация не меняется, поэтому p = nkT не растёт' : 'V уменьшается, n растёт, поэтому p = nkT растёт'],
+        ['Станет насыщенным при V', `${L.fmt(VsL, 1)} л`],
+        ['Стало водой m<sub>воды</sub>', `${s.mw > 0 ? sci(s.mw) : '0'} кг`],
+      ], [
+        ['Температура', `${s.T} К (${tC} °C)`],
+        ['Объём V', `${sci(V)} м³ (${L.fmt(sV.value, 1)} л)`],
         ['m<sub>пара</sub> = p<sub>пара</sub>Vμ/(RT)', `${sci(s.mv)} кг`],
-        ['m<sub>воды</sub> (сконденсировалось)', `${s.mw > 0 ? sci(s.mw) : '0'} кг`],
         ['Полная масса (из p₀V₀)', `${sci(s.mTot)} кг`],
       ]);
     }

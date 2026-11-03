@@ -12,7 +12,7 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Меняйте d, S, ε. Подключён к источнику — U = const; отключён — q = const (заряд фиксируется в момент отключения). Стрелки ↑/↓ — изменение величины относительно момента последнего переключения режима.',
+      caption: 'Подключён к источнику — U = const, отключён — q = const. Стрелки ↑↓ показывают изменение с момента последнего переключения режима.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.62, label: 'Плоский конденсатор с источником напряжения' });
     d.add(cv.destroy);
@@ -21,11 +21,11 @@ export default {
     let qFixed = 0;   // Кл, заряд в режиме q = const
     let ref = null;   // состояние в момент переключения
 
-    const sD = L.slider(ui.controls, { label: 'Расстояние между пластинами d', min: 1, max: 10, step: 0.5, value: DEF.d, unit: 'мм', onInput: draw });
-    const sS = L.slider(ui.controls, { label: 'Площадь пластины S', min: 50, max: 500, step: 10, value: DEF.S, unit: 'см²', onInput: draw });
-    const sE = L.slider(ui.controls, { label: 'Диэлектрическая проницаемость ε', min: 1, max: 10, step: 0.5, value: DEF.eps, onInput: draw });
-    const sU = L.slider(ui.controls, { label: 'Напряжение источника U<sub>ист</sub>', min: 10, max: 300, step: 10, value: DEF.U, unit: 'В', onInput: draw });
-    const mChoice = L.choice(ui.controls, {
+    const sD = L.slider(ui.controls, { key: 'sD', label: 'Расстояние между пластинами d', min: 1, max: 10, step: 0.5, value: DEF.d, unit: 'мм', onInput: draw });
+    const sS = L.slider(ui.controls, { key: 'sS', label: 'Площадь пластины S', min: 50, max: 500, step: 10, value: DEF.S, unit: 'см²', onInput: draw });
+    const sE = L.slider(ui.controls, { key: 'sE', label: 'Диэлектрическая проницаемость ε', min: 1, max: 10, step: 0.5, value: DEF.eps, onInput: draw });
+    const sU = L.slider(ui.controls, { key: 'sU', label: 'Напряжение источника U<sub>ист</sub>', min: 10, max: 300, step: 10, value: DEF.U, unit: 'В', onInput: draw });
+    const mChoice = L.choice(ui.controls, { key: 'mChoice',
       label: 'Режим',
       options: [
         { value: 'U', label: 'подключён к источнику (U = const)' },

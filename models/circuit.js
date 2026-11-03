@@ -2,6 +2,21 @@
 // I = ℰ/(R + r), U = ℰ − Ir, η = R/(R + r), I_кз = ℰ/r (3.2.6, 3.2.7, 3.2.9).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const DEF = { E: 12, r: 2, R1: 4, R2: 6 };
 
 export default {
@@ -11,32 +26,32 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Приборы идеальные: амперметр (R_A = 0) включён в общую ветвь, вольтметр (R_V → ∞) — на зажимах источника или на R₁. «Короткое замыкание» — внешняя цепь замкнута перемычкой (R = 0).',
+      caption: 'Приборы идеальные: RA = 0, RV → ∞. Короткое замыкание — внешняя цепь замкнута перемычкой (R = 0).',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.75, minHeight: 220, maxHeight: 480, label: 'Электрическая цепь: источник, два резистора, амперметр, вольтметр' });
     d.add(cv.destroy);
 
-    const sEmf = L.slider(ui.controls, { label: 'ЭДС ℰ', min: 1, max: 24, step: 1, value: DEF.E, unit: 'В', onInput: draw });
-    const sr = L.slider(ui.controls, { label: 'Внутреннее сопротивление r', min: 0, max: 5, step: 0.5, value: DEF.r, unit: 'Ом', onInput: draw });
-    const sR1 = L.slider(ui.controls, { label: 'R<sub>1</sub>', min: 1, max: 20, step: 1, value: DEF.R1, unit: 'Ом', onInput: draw });
-    const sR2 = L.slider(ui.controls, { label: 'R<sub>2</sub>', min: 1, max: 20, step: 1, value: DEF.R2, unit: 'Ом', onInput: draw });
-    const conn = L.choice(ui.controls, {
+    const sEmf = L.slider(ui.controls, { key: 'sEmf', label: 'ЭДС ℰ', min: 1, max: 24, step: 1, value: DEF.E, unit: 'В', onInput: draw });
+    const sr = L.slider(ui.controls, { key: 'sr', label: 'Внутреннее сопротивление r', min: 0, max: 5, step: 0.5, value: DEF.r, unit: 'Ом', onInput: draw });
+    const sR1 = L.slider(ui.controls, { key: 'sR1', label: 'R<sub>1</sub>', min: 1, max: 20, step: 1, value: DEF.R1, unit: 'Ом', onInput: draw });
+    const sR2 = L.slider(ui.controls, { key: 'sR2', label: 'R<sub>2</sub>', min: 1, max: 20, step: 1, value: DEF.R2, unit: 'Ом', onInput: draw });
+    const conn = L.choice(ui.controls, { key: 'conn',
       label: 'Соединение R<sub>1</sub> и R<sub>2</sub>',
       options: [{ value: 'series', label: 'последовательно' }, { value: 'parallel', label: 'параллельно' }],
       value: 'series', onChange: draw,
     });
-    const vm = L.choice(ui.controls, {
+    const vm = L.choice(ui.controls, { key: 'vm',
       label: 'Вольтметр подключён',
       options: [{ value: 'source', label: 'к зажимам источника' }, { value: 'R1', label: 'к резистору R<sub>1</sub>' }],
       value: 'source', onChange: draw,
     });
-    const sc = L.checkbox(ui.controls, { label: 'Короткое замыкание (R = 0)', checked: false, onChange: draw });
+    const sc = L.checkbox(ui.controls, { key: 'sc', label: 'Короткое замыкание (R = 0)', checked: false, onChange: draw });
     L.button(ui.controls, 'Сброс', () => {
       sEmf.set(DEF.E); sr.set(DEF.r); sR1.set(DEF.R1); sR2.set(DEF.R2);
       conn.set('series'); vm.set('source'); sc.set(false);
       draw();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function calc() {
       const E = sEmf.value, r = sr.value, R1 = sR1.value, R2 = sR2.value;
@@ -208,20 +223,22 @@ export default {
       // --- вывод ---
       const A = (x) => L.fmt(x, 3) + ' А', V = (x) => L.fmt(x, 3) + ' В', Wt = (x) => L.fmt(x, 3) + ' Вт';
       const rows = [
-        ['R<sub>внеш</sub> ' + (s.short ? '(КЗ)' : s.series ? '= R<sub>1</sub> + R<sub>2</sub>' : '= R<sub>1</sub>R<sub>2</sub>/(R<sub>1</sub> + R<sub>2</sub>)'), L.fmt(s.R, 3) + ' Ом'],
         ['I = ℰ/(R + r) — амперметр', Number.isFinite(s.I) ? A(s.I) : '∞ (r = 0: ток КЗ не ограничен)'],
         ['U = ℰ − Ir (на зажимах источника)', V(s.U)],
+        ['Вольтметр (' + (vOnSource ? 'источник' : 'R<sub>1</sub>') + ')', V(s.Vread)],
+        ['R<sub>внеш</sub> ' + (s.short ? '(КЗ)' : s.series ? '= R<sub>1</sub> + R<sub>2</sub>' : '= R<sub>1</sub>R<sub>2</sub>/(R<sub>1</sub> + R<sub>2</sub>)'), L.fmt(s.R, 3) + ' Ом'],
+        ['P<sub>внеш</sub> = IU', Wt(s.Pext)],
+        ['η = R/(R + r)', Number.isFinite(s.eta) ? L.fmt(s.eta * 100, 1) + ' %' : '—'],
+        ['I<sub>кз</sub> = ℰ/r', Number.isFinite(s.Isc) ? A(s.Isc) : '∞ (идеальный источник)'],
+      ];
+      const extra = [
         ['I<sub>1</sub>; I<sub>2</sub>', A(s.I1) + '; ' + A(s.I2)],
         ['U<sub>1</sub>; U<sub>2</sub>', V(s.U1) + '; ' + V(s.U2)],
         ['P<sub>1</sub> = I<sub>1</sub>U<sub>1</sub>; P<sub>2</sub> = I<sub>2</sub>U<sub>2</sub>', Wt(s.P1) + '; ' + Wt(s.P2)],
-        ['P<sub>внеш</sub> = IU', Wt(s.Pext)],
         ['P<sub>ист</sub> = ℰI', Number.isFinite(s.Psrc) ? Wt(s.Psrc) : '∞ (r = 0: ток КЗ не ограничен)'],
         ['P<sub>r</sub> = I²r (потери внутри)', Wt(s.Pr)],
-        ['η = R/(R + r)', Number.isFinite(s.eta) ? L.fmt(s.eta * 100, 1) + ' %' : '—'],
-        ['I<sub>кз</sub> = ℰ/r', Number.isFinite(s.Isc) ? A(s.Isc) : '∞ (идеальный источник)'],
-        ['Вольтметр (' + (vOnSource ? 'источник' : 'R<sub>1</sub>') + ')', V(s.Vread)],
       ];
-      ro.set(rows);
+      ro.set(rows, extra);
     }
 
     cv.onResize(draw);

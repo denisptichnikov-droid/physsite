@@ -46,16 +46,16 @@ export default {
     const d = L.disposer();
     d.add(() => { el.innerHTML = ''; el.classList.remove('model'); });
     const ui = L.layout(el, {
-      caption: 'Резонансная кривая (качественно): амплитуда вынужденных колебаний резко растёт, когда частота вынуждающей силы приближается к собственной частоте ν₀. Чем меньше затухание, тем выше и острее пик. Анимация замедлена в 4 раза.',
+      caption: 'Амплитуда резко растёт, когда частота вынуждающей силы приближается к собственной ν₀. Чем меньше затухание, тем выше и острее пик. Кривая качественная, анимация замедлена в 4 раза.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.85, maxHeight: 560, label: 'Груз на пружине под действием периодической силы и резонансные кривые' });
     d.add(cv.destroy);
 
     let t = 0;
-    const sM = L.slider(ui.controls, { label: 'Масса m', min: 0.2, max: 2, step: 0.1, value: DEF.m, unit: 'кг', onInput: () => update() });
-    const sK = L.slider(ui.controls, { label: 'Жёсткость k', min: 20, max: 200, step: 5, value: DEF.k, unit: 'Н/м', onInput: () => update() });
-    const sB = L.slider(ui.controls, { label: 'Затухание β', min: 0.2, max: 3, step: 0.1, value: DEF.beta, unit: 'с⁻¹', onInput: () => update() });
-    const sNu = L.slider(ui.controls, { label: 'Частота силы ν', min: 0, max: NU_MAX, step: 0.02, value: DEF.nu, unit: 'Гц', onInput: () => update() });
+    const sM = L.slider(ui.controls, { key: 'sM', label: 'Масса m', min: 0.2, max: 2, step: 0.1, value: DEF.m, unit: 'кг', onInput: () => update() });
+    const sK = L.slider(ui.controls, { key: 'sK', label: 'Жёсткость k', min: 20, max: 200, step: 5, value: DEF.k, unit: 'Н/м', onInput: () => update() });
+    const sB = L.slider(ui.controls, { key: 'sB', label: 'Затухание β', min: 0.2, max: 3, step: 0.1, value: DEF.beta, unit: 'с⁻¹', onInput: () => update() });
+    const sNu = L.slider(ui.controls, { key: 'sNu', label: 'Частота силы ν', min: 0, max: NU_MAX, step: 0.02, value: DEF.nu, unit: 'Гц', onInput: () => update() });
 
     const anim = L.animator((dt) => { t += dt * SLOW; draw(); }, { autoplay: true });
     d.add(anim.destroy);

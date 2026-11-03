@@ -2,6 +2,21 @@
 // Формулы — CLAUDE.md, часть B, 4.3.3.
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const NFIELD = 200, COLS = 20, ROWS = 10;
 const DEF = { mode: 'N', N0: 1000, m0: 100, T: 4, t: 0, field: true };
 const T_RANGE = 5; // ось времени: от 0 до 5T
@@ -13,9 +28,7 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Кривая — точный закон N(t) = N₀·2^(−t/T): за каждый период полураспада T остаётся половина ядер. '
-        + 'Поле из 200 точек — наглядная модель: каждое ядро распадается в случайный момент, поэтому число оставшихся '
-        + 'точек лишь примерно следует закону (закон статистический и точен для большого числа ядер).',
+      caption: 'Кривая — точный закон: за каждый период T остаётся половина ядер. Поле из 200 точек следует закону лишь примерно: распад случаен.',
     });
     const cvG = L.canvas(ui.stage, { aspect: 0.6, minHeight: 230, maxHeight: 400, label: 'График N(t) с отметками T, 2T, 3T' });
     d.add(cvG.destroy);
@@ -24,18 +37,18 @@ export default {
     const cvF = L.canvas(fieldWrap, { aspect: 0.32, minHeight: 120, maxHeight: 200, label: 'Поле из 200 ядер: случайный распад' });
     d.add(cvF.destroy);
 
-    const mode = L.choice(ui.controls, {
+    const mode = L.choice(ui.controls, { key: 'mode',
       label: 'Величина',
       options: [{ value: 'N', label: 'число ядер N' }, { value: 'm', label: 'масса m' }],
       value: DEF.mode,
       onChange: () => { syncMode(); update(); },
     });
-    const sN = L.slider(ui.controls, { label: 'Начальное число ядер N<sub>0</sub>', min: 100, max: 10000, step: 100, value: DEF.N0, format: (v) => L.fmt(v, 0), onInput: update });
-    const sM = L.slider(ui.controls, { label: 'Начальная масса m<sub>0</sub>', min: 1, max: 200, step: 1, value: DEF.m0, unit: 'г', format: (v) => L.fmt(v, 0), onInput: update });
-    const sT = L.slider(ui.controls, { label: 'Период полураспада T', min: 1, max: 20, step: 0.5, value: DEF.T, unit: 'с', format: (v) => L.fmt(v, 1), onInput: onT });
-    const sTime = L.slider(ui.controls, { label: 'Время t', min: 0, max: T_RANGE * DEF.T, step: 0.05, value: DEF.t, unit: 'с', format: (v) => L.fmt(v, 2), onInput: (v) => { t = v; update(); } });
+    const sN = L.slider(ui.controls, { key: 'sN', label: 'Начальное число ядер N<sub>0</sub>', min: 100, max: 10000, step: 100, value: DEF.N0, format: (v) => L.fmt(v, 0), onInput: update });
+    const sM = L.slider(ui.controls, { key: 'sM', label: 'Начальная масса m<sub>0</sub>', min: 1, max: 200, step: 1, value: DEF.m0, unit: 'г', format: (v) => L.fmt(v, 0), onInput: update });
+    const sT = L.slider(ui.controls, { key: 'sT', label: 'Период полураспада T', min: 1, max: 20, step: 0.5, value: DEF.T, unit: 'с', format: (v) => L.fmt(v, 1), onInput: onT });
+    const sTime = L.slider(ui.controls, { key: 'sTime', label: 'Время t', min: 0, max: T_RANGE * DEF.T, step: 0.05, value: DEF.t, unit: 'с', format: (v) => L.fmt(v, 2), onInput: (v) => { t = v; update(); } });
     sTime.input.step = 'any'; // время в анимации меняется непрерывно
-    const chk = L.checkbox(ui.controls, { label: 'Показать поле из 200 ядер', checked: DEF.field, onChange: () => { syncField(); update(); } });
+    const chk = L.checkbox(ui.controls, { key: 'chk', label: 'Показать поле из 200 ядер', checked: DEF.field, onChange: () => { syncField(); update(); } });
 
     let t = DEF.t;
     let u = sample();
@@ -44,7 +57,7 @@ export default {
     const play = L.playButton(ui.controls, anim);
     L.button(ui.controls, 'Новая случайная выборка', () => { u = sample(); update(); });
     L.button(ui.controls, 'Сброс', reset, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     // u_i ∈ (0; 1]; момент распада i-го ядра τ_i = T·log₂(1/u_i) — экспоненциальное распределение
     function sample() { return Array.from({ length: NFIELD }, () => 1 - Math.random()); }
@@ -165,8 +178,6 @@ export default {
       const val = (x) => (s.isN ? f(x, 1) : `${f(x, 2)} г = ${f(x / 1000)} кг`);
       const rows = [
         ['t', `${f(s.t, 2)} с`],
-        ['T', `${f(s.T, 1)} с`],
-        ['t/T', f(s.t / s.T, 3)],
         ['2<sup>−t/T</sup> (доля оставшихся)', f(s.ratio, 4)],
         [`${s.sym}(t) = ${s.sym}<sub>0</sub>·2<sup>−t/T</sup>`, val(s.Q)],
         ['Доля распавшихся 1 − 2<sup>−t/T</sup>', `${f(1 - s.ratio, 4)} (${f((1 - s.ratio) * 100, 1)} %)`],
@@ -175,7 +186,7 @@ export default {
       if (chk.value) {
         rows.push(['Поле 200 ядер: осталось (случайно)', `${countLeft(s)} (ожидается ${f(NFIELD * s.ratio, 1)})`]);
       }
-      ro.set(rows);
+      ro.set(rows, [['T', `${f(s.T, 1)} с`], ['t/T', f(s.t / s.T, 3)]]);
     }
 
     function update() {

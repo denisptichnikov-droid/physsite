@@ -22,20 +22,20 @@ export default {
     const d = L.disposer();
     d.add(() => { el.innerHTML = ''; el.classList.remove('model'); });
     const ui = L.layout(el, {
-      caption: 'Волна бежит вправо со скоростью v. Частицы среды не переносятся волной — они колеблются около положений равновесия: поперёк направления распространения (поперечная) или вдоль него (продольная). λ — расстояние между соседними гребнями (сгущениями). Амплитуда на рисунке условная.',
+      caption: 'Волна бежит вправо со скоростью v. Частицы не переносятся, а колеблются около своих мест: поперёк (поперечная) или вдоль (продольная). λ — расстояние между соседними гребнями.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.6, label: 'Цепочка частиц, по которой бежит волна; отмечены длина волны и направления' });
     d.add(cv.destroy);
 
     let t = 0;
-    const type = L.choice(ui.controls, {
+    const type = L.choice(ui.controls, { key: 'type',
       label: 'Волна',
       options: [{ value: 'transverse', label: 'поперечная' }, { value: 'longitudinal', label: 'продольная' }],
       value: DEF.type, onChange: () => update(),
     });
-    const sA = L.slider(ui.controls, { label: 'Амплитуда A', min: 1, max: 5, step: 0.5, value: DEF.A, unit: 'см', onInput: () => update() });
-    const sT = L.slider(ui.controls, { label: 'Период T', min: 1, max: 4, step: 0.1, value: DEF.T, unit: 'с', onInput: () => update() });
-    const sV = L.slider(ui.controls, { label: 'Скорость волны v', min: 0.5, max: 4, step: 0.1, value: DEF.v, unit: 'м/с', onInput: () => update() });
+    const sA = L.slider(ui.controls, { key: 'sA', label: 'Амплитуда A', min: 1, max: 5, step: 0.5, value: DEF.A, unit: 'см', onInput: () => update() });
+    const sT = L.slider(ui.controls, { key: 'sT', label: 'Период T', min: 1, max: 4, step: 0.1, value: DEF.T, unit: 'с', onInput: () => update() });
+    const sV = L.slider(ui.controls, { key: 'sV', label: 'Скорость волны v', min: 0.5, max: 4, step: 0.1, value: DEF.v, unit: 'м/с', onInput: () => update() });
 
     const anim = L.animator((dt) => { t += dt; draw(); }, { autoplay: true });
     d.add(anim.destroy);

@@ -1,0 +1,235 @@
+/* =========================================================================
+   tokens.css — дизайн-токены сайта «ЕГЭ по физике»
+   Владелец: designer. Документация: design/tokens.md
+   Тема: <html data-theme="light|dark">; без атрибута — по prefers-color-scheme.
+   Все пары «текст/фон» проверены на WCAG AA (≥4.5:1), цвета векторов — ≥3:1
+   к --bg, --surface и --surface-2 в обеих темах.
+   ========================================================================= */
+
+:root {
+  color-scheme: light;
+
+  /* ---- Поверхности ---- */
+  --bg: #f7f8fa;            /* фон страницы */
+  --surface: #ffffff;       /* карточки, модели, сайдбар */
+  --surface-2: #eef1f5;     /* вложенные плашки, inline-code, трек слайдера */
+  --border: #d5dae1;        /* обычные рамки */
+  --border-strong: #848e9c; /* рамки полей ввода, разделители-акценты */
+
+  /* ---- Текст ---- */
+  --text: #1b1f24;          /* 15.6:1 к --bg */
+  --muted: #555e6b;         /* 6.2:1 к --bg, 5.8:1 к --surface-2 */
+  --accent: #1f56c2;        /* ссылки, активные элементы; 6.2:1 к --bg */
+  --accent-hover: #17449c;
+  --accent-soft: #e8effc;   /* фон активного пункта меню */
+  --on-accent: #ffffff;     /* текст на --accent (6.6:1) */
+  --focus: #1f56c2;
+  --mark-bg: #fff1a8;       /* подсветка найденного (<mark>) */
+  --mark-text: #1b1f24;
+  --selection: #cfdcf7;
+
+  /* ---- Семантика векторов и полей (едина для всего сайта) ---- */
+  --vec-force: #c2271f;     /* сила F — красный      4.8:1 */
+  --vec-velocity: #1c7a39;  /* скорость v — зелёный  5.1:1 */
+  --vec-accel: #7b3dc2;     /* ускорение a — фиолет. 6.0:1 */
+  --field-e: #a84a00;       /* E — оранжевый         4.3:1 */
+  --field-b: #1565b8;       /* B — синий             5.5:1 */
+  --grid: #dde1e7;          /* сетка графиков/клеток */
+
+  /* ---- Callout'ы: цвет акцента (полоса + заголовок) и фон ---- */
+  --callout-tip: #1c7a39;      --callout-tip-bg: #ecf7ef;
+  --callout-warning: #b42318;  --callout-warning-bg: #fdf0ee;
+  --callout-theory: #1f56c2;   --callout-theory-bg: #eef3fc;
+  --callout-task26: #6b35b0;   --callout-task26-bg: #f4effb;
+  --callout-limits: #8a5a00;   --callout-limits-bg: #fdf6e7;
+  --callout-measure: #0e7178;  --callout-measure-bg: #e9f6f6;
+
+  /* ---- Задачи: псевдонимы callout-цветов, поэтому работают во всех темах и в печати ---- */
+  --level-base: var(--callout-tip);      --level-base-bg: var(--callout-tip-bg);
+  --level-mid: var(--callout-limits);    --level-mid-bg: var(--callout-limits-bg);
+  --level-hard: var(--callout-warning);  --level-hard-bg: var(--callout-warning-bg);
+  --trap: var(--callout-limits);         --trap-bg: var(--callout-limits-bg);
+  --answer: var(--callout-tip);          --answer-bg: var(--callout-tip-bg);
+
+  /* ---- Состояния ---- */
+  --danger: #b42318;
+  --danger-bg: #fdf0ee;
+
+  /* ---- Тени ---- */
+  --shadow-1: 0 1px 2px rgb(20 30 50 / 0.06), 0 1px 1px rgb(20 30 50 / 0.04);
+  --shadow-2: 0 4px 16px rgb(20 30 50 / 0.12);
+
+  /* ---- Типографика ---- */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  --fs-xs: 0.75rem;      /* 12px — подписи показаний, уровень задачи */
+  --fs-ui: 0.8125rem;    /* 13px — карточка формулы, подписи и контролы модели */
+  --fs-sm: 0.875rem;     /* 14px — мета, подписи, навигация */
+  --fs-base: 1.0625rem;  /* 17px — основной текст */
+  --fs-md: 1.125rem;     /* 18px */
+  --fs-h3: 1.1875rem;    /* 19px */
+  --fs-h2: clamp(1.3rem, 1.15rem + 0.6vw, 1.5rem);
+  --fs-h1: clamp(1.55rem, 1.2rem + 1.5vw, 2.1rem);
+  --lh-tight: 1.25;
+  --lh-base: 1.65;
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --katex-scale: 1.1em;  /* формулы чуть крупнее текста */
+
+  /* ---- Отступы (шаг 4px) ---- */
+  --space-1: 0.25rem;  /* 4  */
+  --space-2: 0.5rem;   /* 8  */
+  --space-3: 0.75rem;  /* 12 */
+  --space-4: 1rem;     /* 16 */
+  --space-5: 1.5rem;   /* 24 */
+  --space-6: 2rem;     /* 32 */
+  --space-7: 3rem;     /* 48 */
+  --space-8: 4rem;     /* 64 */
+
+  /* ---- Радиусы ---- */
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* ---- Размеры макета ---- */
+  --topbar-h: 56px;
+  --sidebar-w: 280px;
+  --sidebar-w-md: 256px;
+  --toc-w: 220px;
+  --content-max: 760px;
+  --layout-max: 1440px;
+  --gutter: 16px;          /* боковой отступ на мобильных */
+  --tap: 40px;             /* размер иконочной кнопки */
+  --tap-min: 32px;         /* минимальная зона касания */
+  --tap-touch: 44px;       /* зона касания кнопок заданий и задач */
+  --slider-h: 26px;        /* высота зоны слайдера (на сенсорных экранах 38px) */
+  --model-side: clamp(264px, 40%, 340px); /* правая колонка модели */
+
+  /* ---- Слои ---- */
+  --z-topbar: 30;
+  --z-backdrop: 40;
+  --z-sidebar: 50;
+  --z-skip: 100;
+
+  /* ---- Движение ---- */
+  --dur: 160ms;
+  --dur-slow: 240ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (pointer: coarse) {
+  :root { --slider-h: 38px; }
+}
+
+/* ---------------- Тёмная тема (явная) ---------------- */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111418;
+  --surface: #191d23;
+  --surface-2: #222831;
+  --border: #323944;
+  --border-strong: #6b7684;
+  --text: #e5e8ec;
+  --muted: #9ba5b2;
+  --accent: #7fa8ff;
+  --accent-hover: #a3c0ff;
+  --accent-soft: #1b2a47;
+  --on-accent: #111418;
+  --focus: #7fa8ff;
+  --mark-bg: #5a4a10;
+  --mark-text: #e5e8ec;
+  --selection: #2a3f6b;
+
+  --vec-force: #ff6a62;
+  --vec-velocity: #4ccb72;
+  --vec-accel: #bb8dff;
+  --field-e: #ffa04a;
+  --field-b: #5aaeff;
+  --grid: #2c333d;
+
+  --callout-tip: #4ccb72;      --callout-tip-bg: #15261b;
+  --callout-warning: #ff7b72;  --callout-warning-bg: #2b1716;
+  --callout-theory: #7fa8ff;   --callout-theory-bg: #161f33;
+  --callout-task26: #c29bff;   --callout-task26-bg: #221a33;
+  --callout-limits: #f0b44c;   --callout-limits-bg: #2a2213;
+  --callout-measure: #4cc8c8;  --callout-measure-bg: #112628;
+
+  --danger: #ff7b72;
+  --danger-bg: #2b1716;
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 6px 20px rgb(0 0 0 / 0.5);
+}
+
+/* ---------------- Тёмная тема (системная, если тема не выбрана явно) ---------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111418;
+    --surface: #191d23;
+    --surface-2: #222831;
+    --border: #323944;
+    --border-strong: #6b7684;
+    --text: #e5e8ec;
+    --muted: #9ba5b2;
+    --accent: #7fa8ff;
+    --accent-hover: #a3c0ff;
+    --accent-soft: #1b2a47;
+    --on-accent: #111418;
+    --focus: #7fa8ff;
+    --mark-bg: #5a4a10;
+    --mark-text: #e5e8ec;
+    --selection: #2a3f6b;
+
+    --vec-force: #ff6a62;
+    --vec-velocity: #4ccb72;
+    --vec-accel: #bb8dff;
+    --field-e: #ffa04a;
+    --field-b: #5aaeff;
+    --grid: #2c333d;
+
+    --callout-tip: #4ccb72;      --callout-tip-bg: #15261b;
+    --callout-warning: #ff7b72;  --callout-warning-bg: #2b1716;
+    --callout-theory: #7fa8ff;   --callout-theory-bg: #161f33;
+    --callout-task26: #c29bff;   --callout-task26-bg: #221a33;
+    --callout-limits: #f0b44c;   --callout-limits-bg: #2a2213;
+    --callout-measure: #4cc8c8;  --callout-measure-bg: #112628;
+
+    --danger: #ff7b72;
+    --danger-bg: #2b1716;
+
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-2: 0 6px 20px rgb(0 0 0 / 0.5);
+  }
+}
+
+/* ---------------- Печать: всегда чёрно-белая светлая палитра ---------------- */
+@media print {
+  :root,
+  [data-theme="dark"],
+  :root:not([data-theme="light"]) {
+    color-scheme: light;
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f2f2f2;
+    --border: #999999;
+    --border-strong: #666666;
+    --text: #000000;
+    --muted: #333333;
+    --accent: #000000;
+    --accent-soft: transparent;
+    --mark-bg: transparent;
+    --mark-text: #000000;
+    --callout-tip: #000;      --callout-tip-bg: transparent;
+    --callout-warning: #000;  --callout-warning-bg: transparent;
+    --callout-theory: #000;   --callout-theory-bg: transparent;
+    --callout-task26: #000;   --callout-task26-bg: transparent;
+    --callout-limits: #000;   --callout-limits-bg: transparent;
+    --callout-measure: #000;  --callout-measure-bg: transparent;
+    --shadow-1: none;
+    --shadow-2: none;
+  }
+}

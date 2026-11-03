@@ -127,8 +127,7 @@ export default {
     const pre = `nb${++uid}-${Math.random().toString(36).slice(2, 6)}`;
     const on = (t, ev, fn) => { t.addEventListener(ev, fn); d.add(() => t.removeEventListener(ev, fn)); };
     const ui = L.layout(root, {
-      caption: 'В любой ядерной реакции и любом распаде сохраняются сумма массовых чисел A и сумма зарядовых чисел Z. '
-        + 'Запись ядра: A — сверху слева, Z — снизу слева; число нейтронов N = A − Z.',
+      caption: 'В любой реакции сохраняются суммы A и Z. Запись ядра: A — сверху слева, Z — снизу слева; число нейтронов N = A − Z.',
     });
     const style = document.createElement('style');
     style.textContent = STYLE;
@@ -163,7 +162,7 @@ export default {
     }
 
     // управление
-    const mode = L.choice(ui.controls, { label: 'Процесс', options: MODES, value: 'alpha', onChange: changed });
+    const mode = L.choice(ui.controls, { key: 'mode', label: 'Процесс', options: MODES, value: 'alpha', onChange: changed });
     const selNuc = select(ui.controls, {
       label: 'Исходное ядро',
       options: NUCLIDES.map((n) => ({ value: n.id, label: `${supStr(n.A)}${SYM[n.Z]} — ${nameOf(n.A, n.Z)}` })),
@@ -174,7 +173,7 @@ export default {
       options: REACTIONS.map((r, i) => ({ value: String(i), label: `${i + 1}. ${reactionText(r)}` })),
       value: '0',
     });
-    const solve = L.checkbox(ui.controls, { label: 'Режим «реши сам» (найти продукт распада)', checked: false, onChange: changed });
+    const solve = L.checkbox(ui.controls, { key: 'solve', label: 'Режим «реши сам» (найти продукт распада)', checked: false, onChange: changed });
     L.button(ui.controls, 'Сброс', reset, { reset: true });
     const ro = L.readout(ui.readout);
 
@@ -380,7 +379,6 @@ export default {
       rows.push(['Σ A справа', s.R.unk ? (known ? `${s.R.Af}` : unkExpr(s.R.A, s.R.unk, 'A')) : String(s.R.A)]);
       rows.push(['Σ Z слева', zStr(s.L.Z)]);
       rows.push(['Σ Z справа', s.R.unk ? (known ? zStr(s.R.Zf) : unkExpr(zStr(s.R.Z), s.R.unk, 'Z')) : zStr(s.R.Z)]);
-      rows.push(['Законы сохранения', 'Σ A слева = Σ A справа; Σ Z слева = Σ Z справа']);
       ro.set(rows);
     }
 

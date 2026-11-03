@@ -4,6 +4,21 @@
 // Единицы на графике: p в кПа, V в л, тогда p·V сразу в джоулях (1 кПа·л = 1 Дж).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const DEF = { tpl: 'rect', ccw: false, p1: 100, p2: 300, V1: 2, V2: 6 };
 const X_MAX = 11;   // л
 const Y_MAX = 450;  // кПа
@@ -78,15 +93,13 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Одноатомный идеальный газ. Закрашенная площадь цикла — работа газа за цикл. '
-        + 'Красным отмечены части участков, где газ получает теплоту (Q > 0), синим — где отдаёт (Q < 0). '
-        + 'p в кПа, V в литрах: 1 кПа·л = 1 Дж.',
+      caption: 'Одноатомный идеальный газ. Закрашенная площадь — работа за цикл. Красный участок — газ получает теплоту (Q > 0), синий — отдаёт (Q < 0). 1 кПа·л = 1 Дж.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.72, minHeight: 280, maxHeight: 520, label: 'Цикл на pV-диаграмме' });
     d.add(cv.destroy);
 
     let tpl = DEF.tpl;
-    const ch = L.choice(ui.controls, {
+    const ch = L.choice(ui.controls, { key: 'ch',
       label: 'Цикл',
       options: [
         { value: 'rect', label: 'прямоугольный (2 изобары + 2 изохоры)' },
@@ -103,17 +116,17 @@ export default {
         draw();
       },
     });
-    const cb = L.checkbox(ui.controls, { label: 'Обход против часовой стрелки', checked: DEF.ccw, onChange: () => draw() });
-    const sP1 = L.slider(ui.controls, { label: 'p<sub>1</sub>', min: 50, max: 390, step: 10, value: DEF.p1, unit: 'кПа', onInput: () => fix('p1') });
-    const sP2 = L.slider(ui.controls, { label: 'p<sub>2</sub>', min: 60, max: 400, step: 10, value: DEF.p2, unit: 'кПа', onInput: () => fix('p2') });
-    const sV1 = L.slider(ui.controls, { label: 'V<sub>1</sub>', min: 1, max: 9.5, step: 0.5, value: DEF.V1, unit: 'л', onInput: () => fix('V1') });
-    const sV2 = L.slider(ui.controls, { label: 'V<sub>2</sub>', min: 1.5, max: 10, step: 0.5, value: DEF.V2, unit: 'л', onInput: () => fix('V2') });
+    const cb = L.checkbox(ui.controls, { key: 'cb', label: 'Обход против часовой стрелки', checked: DEF.ccw, onChange: () => draw() });
+    const sP1 = L.slider(ui.controls, { key: 'sP1', label: 'p<sub>1</sub>', min: 50, max: 390, step: 10, value: DEF.p1, unit: 'кПа', onInput: () => fix('p1') });
+    const sP2 = L.slider(ui.controls, { key: 'sP2', label: 'p<sub>2</sub>', min: 60, max: 400, step: 10, value: DEF.p2, unit: 'кПа', onInput: () => fix('p2') });
+    const sV1 = L.slider(ui.controls, { key: 'sV1', label: 'V<sub>1</sub>', min: 1, max: 9.5, step: 0.5, value: DEF.V1, unit: 'л', onInput: () => fix('V1') });
+    const sV2 = L.slider(ui.controls, { key: 'sV2', label: 'V<sub>2</sub>', min: 1.5, max: 10, step: 0.5, value: DEF.V2, unit: 'л', onInput: () => fix('V2') });
     L.button(ui.controls, 'Сброс', () => {
       tpl = DEF.tpl; ch.set(DEF.tpl); cb.set(DEF.ccw);
       sP1.set(DEF.p1); sP2.set(DEF.p2); sV1.set(DEF.V1); sV2.set(DEF.V2);
       draw();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     // p₁ < p₂, V₁ < V₂ — двигаем «другой» слайдер, если пользователь их перепутал
     function fix(which) {
@@ -221,8 +234,12 @@ export default {
 
       // readout
       const rows = [
-        ['Направление обхода', A > 0.05 ? 'по часовой стрелке → A за цикл > 0' : A < -0.05 ? 'против часовой стрелки → A за цикл < 0' : 'площадь цикла равна нулю'],
         ['A за цикл (площадь фигуры)', `${en(A)} Дж`],
+        ['Q<sub>нагр</sub> (сумма Q > 0); |Q<sub>хол</sub>| (сумма |Q < 0|)', `${en(Qn)} Дж; ${en(-Qx)} Дж`],
+        ['η = A/Q<sub>нагр</sub>', A > 0.05 && Qn > 0 ? `${L.fmt((A / Qn) * 100, 1)} %` : '— (A ≤ 0: это не тепловой двигатель)'],
+      ];
+      const extra = [
+        ['Направление обхода', A > 0.05 ? 'по часовой стрелке → A за цикл > 0' : A < -0.05 ? 'против часовой стрелки → A за цикл < 0' : 'площадь цикла равна нулю'],
       ];
       segs.forEach((s, k) => {
         const r = res[k];
@@ -232,11 +249,8 @@ export default {
           : `Q = ${sgn(r.Q)} Дж${r.Q > 0.05 ? ' (получает)' : r.Q < -0.05 ? ' (отдаёт)' : ''}`;
         rows.push([`${s.i}→${s.j}: ${KIND_NAME[s.kind]}`, `${qtxt}; A = ${en(r.A)} Дж; ΔU = ${en(r.dU)} Дж`]);
       });
-      rows.push(['Q<sub>нагр</sub> (сумма Q > 0)', `${en(Qn)} Дж`]);
-      rows.push(['|Q<sub>хол</sub>| (сумма |Q < 0|)', `${en(-Qx)} Дж`]);
-      rows.push(['η = A/Q<sub>нагр</sub>', A > 0.05 && Qn > 0 ? `${L.fmt((A / Qn) * 100, 1)} %` : '— (A ≤ 0: это не тепловой двигатель)']);
-      if (note) rows.push(['Примечание', note]);
-      ro.set(rows);
+      if (note) extra.push(['Примечание', note]);
+      ro.set(rows, extra);
     }
 
     cv.onResize(() => draw());

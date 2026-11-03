@@ -1,6 +1,21 @@
 // Модель «Математический и пружинный маятники» (1.5.1, 1.5.2).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const G = 10; // м/с²
 const PHI0 = Math.PI / 2; // начальная фаза: старт из крайнего положения, x(0) = A
 const DEF = { type: 'math', l: 1, alpha: 10, m: 0.5, k: 50, A: 0.1, slow: false };
@@ -62,25 +77,25 @@ export default {
     const d = L.disposer();
     d.add(() => { el.innerHTML = ''; el.classList.remove('model'); });
     const ui = L.layout(el, {
-      caption: 'Гармонические колебания x(t) = A·sin(ωt + φ₀), φ₀ = π/2 (маятник отпущен из крайнего положения). Графики x(t), v_x(t), a_x(t) синхронны с движением; столбики — E_к и E_п.',
+      caption: 'Маятник отпущен из крайнего положения. Графики x(t), vx(t), ax(t) идут вместе с ним; столбики — Eк и Eп.',
     });
-    const cv = L.canvas(ui.stage, { aspect: 1.3, maxHeight: 680, label: 'Маятник, графики x(t), v(t), a(t) и диаграмма энергий' });
+    const cv = L.canvas(ui.stage, { aspect: 0.5, minHeight: 380, maxHeight: 380, label: 'Маятник, графики x(t), v(t), a(t) и диаграмма энергий' });
     d.add(cv.destroy);
 
     let t = 0;
 
-    const type = L.choice(ui.controls, {
+    const type = L.choice(ui.controls, { key: 'type',
       label: 'Маятник',
       options: [{ value: 'math', label: 'математический' }, { value: 'spring', label: 'пружинный' }],
       value: DEF.type,
       onChange: () => { syncVis(); restart(); },
     });
-    const sL = L.slider(ui.controls, { label: 'Длина нити l', min: 0.1, max: 2.5, step: 0.05, value: DEF.l, unit: 'м', onInput: () => restart() });
-    const sAl = L.slider(ui.controls, { label: 'Угол отклонения α<sub>0</sub>', min: 2, max: 40, step: 1, value: DEF.alpha, unit: '°', onInput: () => restart() });
-    const sM = L.slider(ui.controls, { label: 'Масса m', min: 0.1, max: 2, step: 0.1, value: DEF.m, unit: 'кг', onInput: () => restart() });
-    const sK = L.slider(ui.controls, { label: 'Жёсткость k', min: 10, max: 200, step: 5, value: DEF.k, unit: 'Н/м', onInput: () => restart() });
-    const sA = L.slider(ui.controls, { label: 'Амплитуда A', min: 0.02, max: 0.2, step: 0.01, value: DEF.A, unit: 'м', onInput: () => restart() });
-    const cbSlow = L.checkbox(ui.controls, { label: 'Замедлить в 5 раз', checked: DEF.slow });
+    const sL = L.slider(ui.controls, { key: 'sL', label: 'Длина нити l', min: 0.1, max: 2.5, step: 0.05, value: DEF.l, unit: 'м', onInput: () => restart() });
+    const sAl = L.slider(ui.controls, { key: 'sAl', label: 'Угол отклонения α<sub>0</sub>', min: 2, max: 40, step: 1, value: DEF.alpha, unit: '°', onInput: () => restart() });
+    const sM = L.slider(ui.controls, { key: 'sM', label: 'Масса m', min: 0.1, max: 2, step: 0.1, value: DEF.m, unit: 'кг', onInput: () => restart() });
+    const sK = L.slider(ui.controls, { key: 'sK', label: 'Жёсткость k', min: 10, max: 200, step: 5, value: DEF.k, unit: 'Н/м', onInput: () => restart() });
+    const sA = L.slider(ui.controls, { key: 'sA', label: 'Амплитуда A', min: 0.02, max: 0.2, step: 0.01, value: DEF.A, unit: 'м', onInput: () => restart() });
+    const cbSlow = L.checkbox(ui.controls, { key: 'cbSlow', label: 'Замедлить в 5 раз', checked: DEF.slow });
 
     const anim = L.animator((dt) => { t += dt * (cbSlow.value ? 0.2 : 1); draw(); }, { autoplay: true });
     d.add(anim.destroy);
@@ -89,7 +104,7 @@ export default {
       type.set(DEF.type); sL.set(DEF.l); sAl.set(DEF.alpha); sM.set(DEF.m); sK.set(DEF.k); sA.set(DEF.A); cbSlow.set(DEF.slow);
       syncVis(); restart(); play.sync();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function syncVis() {
       const math = type.value === 'math';
@@ -133,15 +148,18 @@ export default {
       const s = state(r, t);
       ctx.clearRect(0, 0, W, H);
 
-      const sh = H * 0.34;          // высота сцены
-      const barsW = Math.min(96, W * 0.28);
-      const sceneW = W - barsW;
+      // широкий экран: сцена слева, графики справа; узкий: сцена сверху, графики под ней
+      const wide = W >= 560;
+      const leftW = wide ? W * 0.44 : W;
+      const sh = wide ? H : H * 0.36; // высота сцены
+      const barsW = Math.min(96, leftW * 0.28);
+      const sceneW = leftW - barsW;
 
       // ---- сцена
       if (r.math) {
         const px = sceneW / 2, py = 14;
         hatchH(ctx, px - 46, px + 46, py, c.text);
-        const Lpx = (sh - 34) * (0.35 + (0.65 * r.l) / 2.5);
+        const Lpx = (sh - 62) * (0.35 + (0.65 * r.l) / 2.5);
         ctx.save(); ctx.strokeStyle = c.muted; ctx.setLineDash([4, 3]); ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py + Lpx + 14); ctx.stroke(); ctx.restore();
         const al = s.x / r.l; // угол, рад
@@ -149,16 +167,18 @@ export default {
         ctx.save(); ctx.strokeStyle = c.text; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(bx, by); ctx.stroke(); ctx.restore();
         const tx = Math.cos(al), ty = -Math.sin(al); // касательная в сторону роста угла (px)
-        if (Math.abs(s.v) > 1e-3 * r.vmax) L.arrow(ctx, bx, by, bx + tx * (s.v / r.vmax) * 30, by + ty * (s.v / r.vmax) * 30, c.velocity, { label: '→v', labelOffset: [3, -9], font: FONT });
-        if (Math.abs(s.a) > 1e-3 * r.amax) L.arrow(ctx, bx, by + 12, bx + tx * (s.a / r.amax) * 30, by + 12 + ty * (s.a / r.amax) * 30, c.accel, { label: 'a_τ', labelOffset: [3, 9], font: FONT });
+        if (Math.abs(s.v) > 1e-3 * r.vmax) L.arrow(ctx, bx, by, bx + tx * (s.v / r.vmax) * 44, by + ty * (s.v / r.vmax) * 44, c.velocity, { width: 3, label: '→v', labelOffset: [3, -9], font: FONT });
+        if (Math.abs(s.a) > 1e-3 * r.amax) L.arrow(ctx, bx, by + 12, bx + tx * (s.a / r.amax) * 44, by + 12 + ty * (s.a / r.amax) * 44, c.accel, { width: 3, label: 'a_τ', labelOffset: [3, 9], font: FONT });
         ctx.save(); ctx.fillStyle = c.accent; ctx.strokeStyle = c.text; ctx.lineWidth = 1.2;
         ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
         L.text(ctx, 'l', px + (bx - px) * 0.5 - 8, py + (by - py) * 0.5, c.muted, { font: FONT, align: 'right' });
-        if (r.alpha0 > 15) {
-          L.text(ctx, 'α₀ > 15°: T = 2π√(l/g) — приближённо', 6, sh - 4, c.force, { font: '11px system-ui, sans-serif' });
+        const warn = r.alpha0 > 15;
+        L.text(ctx, 'a_τ — касательное ускорение', 6, sh - (warn ? 22 : 9), c.accel, { font: '11px system-ui, sans-serif' });
+        if (warn) {
+          L.text(ctx, 'α₀ > 15°: T = 2π√(l/g) — приближённо', 6, sh - 8, c.force, { font: '11px system-ui, sans-serif' });
         }
       } else {
-        const wx = 18, fy = sh - 14;
+        const wx = 18, fy = wide ? sh * 0.62 : sh - 14;
         const xEq = wx + (sceneW - wx) * 0.55;
         const kx = ((sceneW - wx) * 0.3) / 0.2;
         const bw = 30, bh = 24;
@@ -184,7 +204,7 @@ export default {
       const bw = Math.min(26, (barsW - 24) / 2);
       const bx0 = sceneW + 8;
       ctx.save(); ctx.strokeStyle = c.text; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(bx0 - 2, base); ctx.lineTo(W - 6, base); ctx.stroke(); ctx.restore();
+      ctx.beginPath(); ctx.moveTo(bx0 - 2, base); ctx.lineTo(leftW - 6, base); ctx.stroke(); ctx.restore();
       [[Ek, c.velocity, 'E_к'], [Ep, c.fieldB, 'E_п']].forEach(([E, col, lab], i) => {
         const x = bx0 + 4 + i * (bw + 10);
         const h = r.E > 0 ? (E / r.E) * hmax : 0;
@@ -195,9 +215,10 @@ export default {
       L.text(ctx, 'E = ' + L.fmt(r.E, 3) + ' Дж', bx0, 12, c.muted, { font: '11px system-ui, sans-serif' });
 
       // ---- графики
-      const gTop = sh + 8;
+      const gTop = wide ? 6 : sh + 6;
+      const gx0 = wide ? leftW : 0;
       const slot = (H - gTop - 4) / 3;
-      const gx = 46, gw = Math.max(60, W - gx - 30);
+      const gx = gx0 + 46, gw = Math.max(60, W - gx - 30);
       const tm = t % (2 * r.T);
       const plots = [
         { f: (tt) => state(r, tt).x, ymax: r.A, lab: 'x, м', col: c.accent },
@@ -227,17 +248,18 @@ export default {
         : [['T = 2π√(m/k)', L.fmt(r.T, 3) + ' с']];
       rows.push(
         ['ν = 1/T', L.fmt(r.nu, 3) + ' Гц'],
-        [r.math ? 'ω = √(g/l)' : 'ω = √(k/m)', L.fmt(r.w, 3) + ' рад/с'],
-        [r.math ? 'A ≈ l·α₀ (α₀ в радианах)' : 'A', L.fmt(r.A, 3) + ' м'],
         ['v<sub>max</sub> = ωA', L.fmt(r.vmax, 3) + ' м/с'],
         ['a<sub>max</sub> = ω²A', L.fmt(r.amax, 3) + ' м/с²'],
         ['E = mv<sub>max</sub>²/2 = kA²/2', L.fmt(r.E, 3) + ' Дж'],
-        ['Период изменения энергии T/2', L.fmt(r.T / 2, 3) + ' с'],
       );
       if (r.math && r.alpha0 > 15) {
         rows.push(['Внимание', `α₀ = ${r.alpha0}° > 15°: формула T = 2π√(l/g) верна только для малых колебаний; реальный период больше`]);
       }
-      ro.set(rows);
+      ro.set(rows, [
+        [r.math ? 'ω = √(g/l)' : 'ω = √(k/m)', L.fmt(r.w, 3) + ' рад/с'],
+        [r.math ? 'A ≈ l·α₀ (α₀ в радианах)' : 'A', L.fmt(r.A, 3) + ' м'],
+        ['Период изменения энергии T/2', L.fmt(r.T / 2, 3) + ' с'],
+      ]);
     }
 
     function restart() { t = 0; draw(); updateReadout(); }

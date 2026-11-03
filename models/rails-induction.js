@@ -1,6 +1,21 @@
 // Модель «Проводник на рельсах в магнитном поле» (ЭДС в движущемся проводнике, правило Ленца, сила Ампера).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const SLOW = 0.1; // анимация замедлена в 10 раз
 const RAIL_LEN = 2.15; // длина рельсов на рисунке, м
 const X_MIN = 0.15, X_MAX = 2.0; // пределы положения перемычки, м
@@ -37,9 +52,7 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Перемычка длиной l скользит по горизонтальным рельсам, замкнутым резистором R; поле B перпендикулярно плоскости рельсов. ' +
-        'Сопротивлением перемычки и рельсов пренебрегаем. Индукционный ток направлен так, что его магнитное поле препятствует изменению потока (правило Ленца), ' +
-        'а сила Ампера на перемычку всегда направлена против скорости — тормозит её. Анимация замедлена в 10 раз.',
+      caption: 'Перемычку тянут с постоянной скоростью: внешняя сила уравновешивает силу Ампера. Без неё перемычка тормозилась бы. Сопротивлением перемычки и рельсов пренебрегаем, анимация замедлена в 10 раз.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.62, minHeight: 230, maxHeight: 520, label: 'Перемычка на рельсах в магнитном поле, индукционный ток и сила Ампера' });
     d.add(cv.destroy);
@@ -48,14 +61,14 @@ export default {
     let x = DEF.x; // расстояние от резистора до перемычки, м
 
     const onParam = () => { updRO(true); draw(); };
-    const sDir = L.choice(ui.controls, {
+    const sDir = L.choice(ui.controls, { key: 'sDir',
       label: 'Вектор <i>B</i>', value: DEF.dir, onChange: onParam,
       options: [{ value: 'out', label: '⊙ к нам' }, { value: 'in', label: '⊗ от нас' }],
     });
-    const sB = L.slider(ui.controls, { label: 'Индукция <i>B</i>', min: 0.1, max: 2, step: 0.1, value: DEF.B, unit: 'Тл', onInput: onParam });
-    const sL = L.slider(ui.controls, { label: 'Длина перемычки <i>l</i>', min: 0.2, max: 1, step: 0.05, value: DEF.l, unit: 'м', onInput: onParam });
-    const sV = L.slider(ui.controls, { label: 'Скорость <i>v</i> (+ вправо)', min: -5, max: 5, step: 0.5, value: DEF.v, unit: 'м/с', onInput: onParam });
-    const sR = L.slider(ui.controls, { label: 'Сопротивление <i>R</i>', min: 0.5, max: 10, step: 0.5, value: DEF.R, unit: 'Ом', onInput: onParam });
+    const sB = L.slider(ui.controls, { key: 'sB', label: 'Индукция <i>B</i>', min: 0.1, max: 2, step: 0.1, value: DEF.B, unit: 'Тл', onInput: onParam });
+    const sL = L.slider(ui.controls, { key: 'sL', label: 'Длина перемычки <i>l</i>', min: 0.2, max: 1, step: 0.05, value: DEF.l, unit: 'м', onInput: onParam });
+    const sV = L.slider(ui.controls, { key: 'sV', label: 'Скорость <i>v</i> (+ вправо)', min: -5, max: 5, step: 0.5, value: DEF.v, unit: 'м/с', onInput: onParam });
+    const sR = L.slider(ui.controls, { key: 'sR', label: 'Сопротивление <i>R</i>', min: 0.5, max: 10, step: 0.5, value: DEF.R, unit: 'Ом', onInput: onParam });
 
     const anim = L.animator(step, { autoplay: true });
     d.add(anim.destroy);
@@ -65,7 +78,7 @@ export default {
       x = DEF.x;
       play.sync(); updRO(true); draw();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function phys() {
       const B = sB.value, l = sL.value, v = sV.value, R = sR.value;
@@ -105,16 +118,19 @@ export default {
       if (!force && now - roTime < 200) return;
       roTime = now;
       const p = phys();
+      const fDir = p.v > 0 ? 'влево' : 'вправо', vDir = p.v > 0 ? 'вправо' : 'влево';
       ro.set([
+        ['ℰ = <i>Blv</i>', f3(p.emf) + ' В'],
+        ['<i>I</i> = ℰ/<i>R</i>', f3(p.I) + ' А'],
+        ['Ток в контуре', p.sense === 0 ? 'нет' : p.sense > 0 ? 'по часовой стрелке' : 'против часовой стрелки'],
+        ['<i>F</i><sub>A</sub> = <i>IBl</i>', p.v === 0 ? '0 Н' : `${f3(p.FA)} Н, ${fDir}: тормозит`],
+        ['Внешняя сила <i>F</i><sub>внеш</sub> = <i>F</i><sub>A</sub>', p.v === 0 ? '0 Н' : `${f3(p.FA)} Н, ${vDir}: тянет`],
+        ['<i>F</i><sub>внеш</sub>·<i>v</i> = <i>I</i>²<i>R</i>', f3(p.FA * Math.abs(p.v)) + ' Вт'],
+      ], [
         ['<i>x</i> (от резистора до перемычки)', f3(x) + ' м'],
         ['<i>S</i> = <i>l</i>·<i>x</i>', f3(p.S) + ' м²'],
         ['Φ = <i>BS</i>', f3(p.Phi) + ' Вб'],
         ['|ΔΦ/Δ<i>t</i>| = <i>Blv</i>', p.v === 0 ? '0 (поток не меняется)' : `${f3(Math.abs(p.dPhi))} Вб/с (поток ${p.dPhi > 0 ? 'растёт' : 'убывает'})`],
-        ['ℰ = <i>Blv</i>', f3(p.emf) + ' В'],
-        ['<i>I</i> = ℰ/<i>R</i>', f3(p.I) + ' А'],
-        ['<i>F</i><sub>A</sub> = <i>IBl</i>', f3(p.FA) + ' Н'],
-        ['Ток в контуре', p.sense === 0 ? 'нет' : p.sense > 0 ? 'по часовой стрелке' : 'против часовой стрелки'],
-        ['Сила Ампера', p.v === 0 ? '—' : `${p.v > 0 ? 'влево' : 'вправо'}, против скорости (тормозит)`],
       ]);
     }
 
@@ -142,7 +158,7 @@ export default {
       L.text(ctx, out ? '⊙ к нам' : '⊗ от нас', 30, 19, c.fieldB, { font: '13px system-ui, sans-serif' });
 
       // геометрия
-      const padL = 40, padR = 14, padT = 46, padB = 44;
+      const padL = 40, padR = 14, padT = 58, padB = 44;
       const k = Math.max(10, Math.min((W - padL - padR) / RAIL_LEN, H - padT - padB)); // px на метр
       const gap = p.l * k;
       const yMid = padT + (H - padT - padB) / 2;
@@ -218,7 +234,22 @@ export default {
         L.arrow(ctx, xr, yv, xr + sv * vlen, yv, c.velocity, { width: 2.5, label: '→v', labelOffset: [sv > 0 ? 6 : -18, -10] });
         const flen = L.clamp(18 + 22 * Math.sqrt(p.FA), 18, 72);
         L.arrow(ctx, xr, yMid, xr - sv * flen, yMid, c.force, { width: 2.5, label: '→F_A', labelOffset: [sv > 0 ? -26 : 4, -12] });
+        // внешняя сила: равна силе Ампера и направлена по скорости
+        L.arrow(ctx, xr, yBot + 14, xr + sv * flen, yBot + 14, c.force, { width: 2.5, label: '→F_{внеш}', labelOffset: [sv > 0 ? 4 : -44, 11] });
       }
+
+      // почему скорость постоянна
+      const tx = 122, narrow = W < 480;
+      const tf = narrow ? '600 11px system-ui, sans-serif' : '600 12px system-ui, sans-serif';
+      const l1 = p.v === 0 ? 'Перемычка стоит: поток не меняется' : narrow ? 'Едет равномерно: её тянут' : 'Едет равномерно только потому, что её тянут:';
+      ctx.save();
+      ctx.font = tf;
+      const tw = ctx.measureText(l1).width + 8;
+      ctx.globalAlpha = 0.88; ctx.fillStyle = c.bg;
+      ctx.fillRect(tx - 4, 3, tw, p.v === 0 ? 18 : 34);
+      ctx.restore();
+      L.text(ctx, l1, tx, 12, c.text, { font: tf });
+      if (p.v !== 0) L.text(ctx, 'F_{внеш} = F_A', tx, 28, c.force, { font: tf });
     }
 
     cv.onResize(draw);

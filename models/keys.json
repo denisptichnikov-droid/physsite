@@ -1,0 +1,247 @@
+{
+"archimedes": [
+"cbHang",
+"liq",
+"sRhoB",
+"sRhoL",
+"sV"
+],
+"bohr-levels": [
+"from",
+"to"
+],
+"capacitor": [
+"mChoice",
+"sD",
+"sE",
+"sS",
+"sU"
+],
+"carnot": [
+"sQ",
+"sTc",
+"sTh"
+],
+"circuit": [
+"conn",
+"sEmf",
+"sR1",
+"sR2",
+"sc",
+"sr",
+"vm"
+],
+"circular-motion": [
+"sR",
+"sV"
+],
+"coil-magnet-3d": [
+"pole",
+"pos",
+"speed",
+"turns"
+],
+"collisions": [
+"sM1",
+"sM2",
+"sV1",
+"sV2",
+"type"
+],
+"cycle-work": [
+"cb",
+"ch",
+"sP1",
+"sP2",
+"sV1",
+"sV2"
+],
+"decay": [
+"chk",
+"mode",
+"sM",
+"sN",
+"sT",
+"sTime"
+],
+"double-slit": [
+"sA",
+"sL",
+"sY"
+],
+"em-spectrum": [
+"sU"
+],
+"em-wave-3d": [
+"lambda",
+"showB",
+"showE"
+],
+"energy-bars": [
+"sA",
+"sH",
+"sK",
+"sM",
+"sMu",
+"scene"
+],
+"field-lines": [
+"eqCb",
+"nChoice"
+],
+"gas-piston": [
+"ch",
+"sT",
+"sV"
+],
+"grating": [
+"cbW",
+"sD",
+"sL",
+"sN"
+],
+"hand-rules-3d": [
+"field",
+"hand",
+"rule",
+"sign"
+],
+"helix-3d": [
+"B",
+"angle",
+"ghost",
+"particle",
+"v"
+],
+"humidity": [
+"ch",
+"sPhi",
+"sV"
+],
+"incline": [
+"cbDec",
+"sAl",
+"sM",
+"sMu"
+],
+"lc-circuit": [
+"sC",
+"sL",
+"sQ"
+],
+"lens-builder": [
+"cbOblique",
+"chType",
+"sAng",
+"sD",
+"sF",
+"sH"
+],
+"lever-moments": [
+"cb3",
+"cbB"
+],
+"lorentz": [
+"sB",
+"sDir",
+"sPart",
+"sV"
+],
+"magnetic-field-3d": [
+"I",
+"dir",
+"source"
+],
+"magnetic-lines": [
+"sChoice"
+],
+"motion-graphs": [
+"sA",
+"sT",
+"sV0",
+"sX0"
+],
+"nuclear-balance": [
+"mode",
+"solve"
+],
+"pendulums": [
+"cbSlow",
+"sA",
+"sAl",
+"sK",
+"sL",
+"sM",
+"type"
+],
+"phase-graph": [
+"sM",
+"sQ",
+"sT0"
+],
+"photoeffect": [
+"metal",
+"sI",
+"sLam",
+"sU"
+],
+"plane-mirror": [
+"chKey",
+"chObj",
+"chOr"
+],
+"prism": [
+"sA",
+"sAl"
+],
+"projectile": [
+"sA",
+"sH",
+"sT",
+"sV"
+],
+"pulleys": [
+"ch",
+"sM1",
+"sM2",
+"sMu"
+],
+"rails-3d": [
+"B",
+"R",
+"alpha",
+"l",
+"v"
+],
+"rails-induction": [
+"sB",
+"sDir",
+"sL",
+"sR",
+"sV"
+],
+"refraction": [
+"ch1",
+"ch2",
+"sA"
+],
+"resonance": [
+"sB",
+"sK",
+"sM",
+"sNu"
+],
+"rotating-frame-3d": [
+"B",
+"N",
+"S",
+"angle",
+"omega"
+],
+"wave": [
+"sA",
+"sT",
+"sV",
+"type"
+]
+}

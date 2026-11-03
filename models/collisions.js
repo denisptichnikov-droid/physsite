@@ -28,23 +28,23 @@ export default {
     const d = L.disposer();
     d.add(() => { el.innerHTML = ''; el.classList.remove('model'); });
     const ui = L.layout(el, {
-      caption: 'Центральный удар двух шаров на гладкой прямой. Проекции скоростей — на ось x (вправо). Суммарный импульс сохраняется при любом ударе; кинетическая энергия — только при абсолютно упругом.',
+      caption: 'Центральный удар на гладкой прямой; скорости — проекции на ось x. Импульс сохраняется всегда, кинетическая энергия — только при упругом ударе.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.9, maxHeight: 560, label: 'Два шара до и после удара, векторы скоростей и импульсов' });
     d.add(cv.destroy);
 
     let tau = 0; // время анимации, с
 
-    const type = L.choice(ui.controls, {
+    const type = L.choice(ui.controls, { key: 'type',
       label: 'Тип удара',
       options: [{ value: 'elastic', label: 'абсолютно упругий' }, { value: 'inelastic', label: 'абсолютно неупругий' }],
       value: DEF.type,
       onChange: () => restart(),
     });
-    const sM1 = L.slider(ui.controls, { label: 'Масса m<sub>1</sub>', min: 0.5, max: 5, step: 0.5, value: DEF.m1, unit: 'кг', onInput: () => restart() });
-    const sM2 = L.slider(ui.controls, { label: 'Масса m<sub>2</sub>', min: 0.5, max: 5, step: 0.5, value: DEF.m2, unit: 'кг', onInput: () => restart() });
-    const sV1 = L.slider(ui.controls, { label: 'Скорость v<sub>1x</sub>', min: -10, max: 10, step: 0.5, value: DEF.v1, unit: 'м/с', onInput: () => restart() });
-    const sV2 = L.slider(ui.controls, { label: 'Скорость v<sub>2x</sub>', min: -10, max: 10, step: 0.5, value: DEF.v2, unit: 'м/с', onInput: () => restart() });
+    const sM1 = L.slider(ui.controls, { key: 'sM1', label: 'Масса m<sub>1</sub>', min: 0.5, max: 5, step: 0.5, value: DEF.m1, unit: 'кг', onInput: () => restart() });
+    const sM2 = L.slider(ui.controls, { key: 'sM2', label: 'Масса m<sub>2</sub>', min: 0.5, max: 5, step: 0.5, value: DEF.m2, unit: 'кг', onInput: () => restart() });
+    const sV1 = L.slider(ui.controls, { key: 'sV1', label: 'Скорость v<sub>1x</sub>', min: -10, max: 10, step: 0.5, value: DEF.v1, unit: 'м/с', onInput: () => restart() });
+    const sV2 = L.slider(ui.controls, { key: 'sV2', label: 'Скорость v<sub>2x</sub>', min: -10, max: 10, step: 0.5, value: DEF.v2, unit: 'м/с', onInput: () => restart() });
 
     const anim = L.animator((dt) => {
       tau += dt;

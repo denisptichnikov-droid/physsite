@@ -1,6 +1,21 @@
 // Модель «Идеальный колебательный контур» (3.5.1, 3.5.2).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const C_LIGHT = 3e8; // м/с
 const VIS_PERIOD = 4; // на экране один период длится 4 с (условно)
 
@@ -19,9 +34,7 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Идеальный контур (R = 0). В момент t = 0 конденсатор заряжен до q_max: q = q_max·cos ωt, I = q′ = −ωq_max·sin ωt. ' +
-        'q — заряд верхней обкладки; I > 0, когда ток течёт к верхней обкладке. Энергия перекачивается между конденсатором и катушкой, W_C + W_L = const. ' +
-        'Анимация замедлена: один период на экране — 4 с.',
+      caption: 'Идеальный контур (R = 0): при t = 0 конденсатор заряжен до qmax, энергия перекачивается между конденсатором и катушкой. q — заряд верхней обкладки, I > 0 — ток к ней. Один период на экране — 4 с.',
     });
     const cv = L.canvas(ui.stage, { aspect: 1.15, minHeight: 360, maxHeight: 640, label: 'Схема LC-контура, столбики энергии и графики q(t), I(t)' });
     d.add(cv.destroy);
@@ -30,9 +43,9 @@ export default {
     let tau = 0; // время в периодах, 0 ≤ tau < 2
 
     const onParam = () => { updRO(true); draw(); };
-    const sL = L.slider(ui.controls, { label: 'Индуктивность <i>L</i>', min: 1, max: 200, step: 1, value: DEF.L, unit: 'мГн', onInput: onParam });
-    const sC = L.slider(ui.controls, { label: 'Ёмкость <i>C</i>', min: 1, max: 100, step: 1, value: DEF.C, unit: 'мкФ', onInput: onParam });
-    const sQ = L.slider(ui.controls, { label: 'Заряд <i>q</i><sub>max</sub>', min: 10, max: 500, step: 10, value: DEF.q, unit: 'мкКл', onInput: onParam });
+    const sL = L.slider(ui.controls, { key: 'sL', label: 'Индуктивность <i>L</i>', min: 1, max: 200, step: 1, value: DEF.L, unit: 'мГн', onInput: onParam });
+    const sC = L.slider(ui.controls, { key: 'sC', label: 'Ёмкость <i>C</i>', min: 1, max: 100, step: 1, value: DEF.C, unit: 'мкФ', onInput: onParam });
+    const sQ = L.slider(ui.controls, { key: 'sQ', label: 'Заряд <i>q</i><sub>max</sub>', min: 10, max: 500, step: 10, value: DEF.q, unit: 'мкКл', onInput: onParam });
 
     const anim = L.animator(step, { autoplay: true });
     d.add(anim.destroy);
@@ -42,7 +55,7 @@ export default {
       tau = 0;
       play.sync(); updRO(true); draw();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function phys() {
       const Lh = sL.value * 1e-3; // Гн
@@ -81,18 +94,19 @@ export default {
       const p = phys();
       ro.set([
         ['<i>T</i> = 2π√(<i>LC</i>)', f3(p.T) + ' с'],
-        ['ω = 1/√(<i>LC</i>)', f3(p.w) + ' рад/с'],
-        ['ν = 1/<i>T</i>', f3(p.nu) + ' Гц'],
         ['<i>I</i><sub>max</sub> = ω<i>q</i><sub>max</sub>', f3(p.Imax) + ' А'],
-        ['<i>U</i><sub>max</sub> = <i>q</i><sub>max</sub>/<i>C</i>', f3(p.Umax) + ' В'],
-        ['<i>W</i> = <i>q</i><sup>2</sup><sub>max</sub>/(2<i>C</i>)', f3(p.Wtot) + ' Дж'],
-        ['λ = <i>cT</i>', f3(p.lam) + ' м'],
-        ['<i>t</i>', f3(p.t) + ' с'],
         ['<i>q</i> = <i>q</i><sub>max</sub> cos ω<i>t</i>', f3(p.q) + ' Кл'],
         ['<i>I</i> = −ω<i>q</i><sub>max</sub> sin ω<i>t</i>', f3(p.I) + ' А'],
         ['<i>W<sub>C</sub></i> = <i>q</i><sup>2</sup>/(2<i>C</i>)', f3(p.WC) + ' Дж'],
         ['<i>W<sub>L</sub></i> = <i>LI</i><sup>2</sup>/2', f3(p.WL) + ' Дж'],
         ['<i>W<sub>C</sub></i> + <i>W<sub>L</sub></i>', f3(p.WC + p.WL) + ' Дж'],
+      ], [
+        ['ω = 1/√(<i>LC</i>)', f3(p.w) + ' рад/с'],
+        ['ν = 1/<i>T</i>', f3(p.nu) + ' Гц'],
+        ['<i>U</i><sub>max</sub> = <i>q</i><sub>max</sub>/<i>C</i>', f3(p.Umax) + ' В'],
+        ['<i>W</i> = <i>q</i><sup>2</sup><sub>max</sub>/(2<i>C</i>)', f3(p.Wtot) + ' Дж'],
+        ['λ = <i>cT</i>', f3(p.lam) + ' м'],
+        ['<i>t</i>', f3(p.t) + ' с'],
       ]);
     }
 

@@ -4,6 +4,21 @@
 // Груз правее опоры вращает балку по часовой стрелке, левее — против. Масса балки (по желанию) — в её середине (x = 1 м).
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const G = 10;
 const BEAM = 2;
 const DEF = { xo: 1, m1: 2, x1: 0.6, m2: 1, x2: 1.8, use3: false, m3: 1, x3: 1.5, useBeam: false, M: 1 };
@@ -33,8 +48,7 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Плечо силы — кратчайшее расстояние от оси (опоры) до линии действия силы; для вертикальных сил на горизонтальной балке это |xᵢ − x_O|. '
-        + 'Равновесие: M_по = M_против (то же самое — центр масс системы над опорой). Если равновесия нет, штрихом показано, куда начнёт поворачиваться балка.',
+      caption: 'Плечо — кратчайшее расстояние от оси до линии действия силы. Равновесие: Mпо = Mпротив. Штрих показывает, куда начнёт поворачиваться балка.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.62, minHeight: 290, maxHeight: 460, label: 'Балка на опоре с грузами, плечами сил и моментами' });
     d.add(cv.destroy);
@@ -45,10 +59,10 @@ export default {
     const sX1 = sl('Положение груза x<sub>1</sub>', 0, BEAM, 0.1, DEF.x1, 'м');
     const sM2 = sl('Масса груза m<sub>2</sub>', 0, 5, 0.1, DEF.m2, 'кг');
     const sX2 = sl('Положение груза x<sub>2</sub>', 0, BEAM, 0.1, DEF.x2, 'м');
-    const cb3 = L.checkbox(ui.controls, { label: 'Третий груз', checked: DEF.use3, onChange: () => { sync(); draw(); } });
+    const cb3 = L.checkbox(ui.controls, { key: 'cb3', label: 'Третий груз', checked: DEF.use3, onChange: () => { sync(); draw(); } });
     const sM3 = sl('Масса груза m<sub>3</sub>', 0, 5, 0.1, DEF.m3, 'кг');
     const sX3 = sl('Положение груза x<sub>3</sub>', 0, BEAM, 0.1, DEF.x3, 'м');
-    const cbB = L.checkbox(ui.controls, { label: 'Учитывать массу балки (центр масс — посередине)', checked: DEF.useBeam, onChange: () => { sync(); draw(); } });
+    const cbB = L.checkbox(ui.controls, { key: 'cbB', label: 'Учитывать массу балки (центр масс — посередине)', checked: DEF.useBeam, onChange: () => { sync(); draw(); } });
     const sMb = sl('Масса балки M', 0, 5, 0.1, DEF.M, 'кг');
     function sync() {
       sM3.el.style.display = sX3.el.style.display = cb3.value ? '' : 'none';
@@ -60,7 +74,7 @@ export default {
       sync(); draw();
     }, { reset: true });
 
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
     let lastRO = '';
 
     function draw() {
@@ -188,17 +202,18 @@ export default {
 
       // ---- числа ----
       const rows = [];
+      const extra = [];
       all.forEach((q) => {
         const nm = q.beam ? 'балка' : `груз ${q.name}`;
-        rows.push([`${nm}: F = mg; l; M = Fl`, `${L.fmt(q.F)} Н; ${L.fmt(q.arm)} м; ${L.fmt(snap(q.M))} Н·м${q.dir > 0 ? ' (по час.)' : q.dir < 0 ? ' (против час.)' : ''}`]);
+        extra.push([`${nm}: F = mg; l; M = Fl`, `${L.fmt(q.F)} Н; ${L.fmt(q.arm)} м; ${L.fmt(snap(q.M))} Н·м${q.dir > 0 ? ' (по час.)' : q.dir < 0 ? ' (против час.)' : ''}`]);
       });
       rows.push(['M<sub>по</sub> (сумма по часовой)', L.fmt(snap(Mcw)) + ' Н·м']);
       rows.push(['M<sub>против</sub> (сумма против часовой)', L.fmt(snap(Mccw)) + ' Н·м']);
-      rows.push(['Итог', eq ? 'равновесие (M_по = M_против)' : net > 0 ? 'поворот по часовой стрелке' : 'поворот против часовой стрелки']);
+      rows.push(['Итог', eq ? 'равновесие: моменты по и против часовой равны' : net > 0 ? 'поворот по часовой стрелке' : 'поворот против часовой стрелки']);
       rows.push(['Центр масс x<sub>цм</sub> = Σm<sub>i</sub>x<sub>i</sub> / Σm<sub>i</sub>', mSum > 0 ? L.fmt(snap(mx / mSum)) + ' м (опора: ' + L.fmt(xo) + ' м)' : '— (нет грузов)']);
       if (eq) rows.push(['N опоры = Σm<sub>i</sub>g (в равновесии)', L.fmt(mSum * G) + ' Н']);
-      const key = JSON.stringify(rows);
-      if (key !== lastRO) { lastRO = key; ro.set(rows); }
+      const key = JSON.stringify([rows, extra]);
+      if (key !== lastRO) { lastRO = key; ro.set(rows, extra); }
     }
 
     sync();

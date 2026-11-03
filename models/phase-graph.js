@@ -3,6 +3,21 @@
 // Табличные c, λ, L — CHECK в docs/phase-graph.md.
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const C_ICE = 2100, LAMBDA = 3.3e5, C_W = 4200, L_V = 2.3e6, C_ST = 2000;
 const T_END = 150; // °C — конечная температура пара
 const DEF = { m: 1, t0: -20, q: 0 };
@@ -53,22 +68,21 @@ export default {
   mount(el) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Вода (лёд) массой m нагревается до 150 °C при нормальном давлении. На горизонтальных участках '
-        + 'температура не меняется: теплота идёт на плавление (Q = λm) и кипение (Q = Lm).',
+      caption: 'Вода (лёд) массой m нагревается при нормальном давлении. На горизонтальных участках температура не меняется: теплота идёт на плавление и кипение.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.6, minHeight: 260, maxHeight: 440, label: 'График зависимости температуры от подведённой теплоты' });
     d.add(cv.destroy);
 
     let qPct = DEF.q;
     let B = build(DEF.m, DEF.t0);
-    const sM = L.slider(ui.controls, { label: 'Масса m', min: 0.1, max: 2, step: 0.1, value: DEF.m, unit: 'кг', onInput: () => rebuild() });
-    const sT0 = L.slider(ui.controls, { label: 'Начальная температура t<sub>0</sub>', min: -50, max: 140, step: 5, value: DEF.t0, unit: '°C', onInput: () => rebuild() });
-    const sQ = L.slider(ui.controls, {
+    const sM = L.slider(ui.controls, { key: 'sM', label: 'Масса m', min: 0.1, max: 2, step: 0.1, value: DEF.m, unit: 'кг', onInput: () => rebuild() });
+    const sT0 = L.slider(ui.controls, { key: 'sT0', label: 'Начальная температура t<sub>0</sub>', min: -50, max: 140, step: 5, value: DEF.t0, unit: '°C', onInput: () => rebuild() });
+    const sQ = L.slider(ui.controls, { key: 'sQ',
       label: 'Подведённая теплота Q', min: 0, max: 100, step: 0.1, value: 0,
       format: (v) => `${L.fmt((v / 100) * B.total / 1000, 0)} кДж`,
       onInput: (v) => { qPct = v; draw(); },
     });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     const anim = L.animator((dt) => {
       qPct += (dt * 100) / 8;
@@ -153,15 +167,16 @@ export default {
         ['Подведено Q', `${sci(Q)} Дж`],
         ['Температура t', `${L.fmt(st.t, 1)} °C (T = ${L.fmt(st.t + 273, 1)} К)`],
         ['Состояние', state],
+        ['Q полное', `${sci(B.total)} Дж`],
       ];
+      const extra = [];
       B.seg.forEach((s, i) => {
         const how = s.kind === 'heat'
           ? `${s.c}·${L.fmt(m, 1)}·${L.fmt(s.t2 - s.t1, 0)}`
           : `${sci(s.t1 === 0 ? LAMBDA : L_V, 2)}·${L.fmt(m, 1)}`;
-        rows.push([`${NUM[i]} ${s.name}: ${s.f.replace(/_(.)/g, '<sub>$1</sub>')}`, `${how} = ${sci(s.Q)} Дж`]);
+        extra.push([`${NUM[i]} ${s.name}: ${s.f.replace(/_(.)/g, '<sub>$1</sub>')}`, `${how} = ${sci(s.Q)} Дж`]);
       });
-      rows.push(['Q полное', `${sci(B.total)} Дж`]);
-      ro.set(rows);
+      ro.set(rows, extra);
     }
 
     cv.onResize(() => draw());

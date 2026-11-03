@@ -3,6 +3,21 @@
 // Масштаб условный: вся сцена — 16 мкм в ширину, чтобы волновые фронты были видны. Δ считается по геометрии рисунка.
 import * as L from './_lib.js';
 
+/** Показания: главные строки на виду, остальное — в раскрывающемся блоке. */
+function moreReadout(parent) {
+  const main = L.readout(parent);
+  const det = document.createElement('details');
+  det.className = 'model-more';
+  det.style.marginTop = '8px';
+  const sum = document.createElement('summary');
+  sum.textContent = 'Ещё величины';
+  sum.style.cursor = 'pointer';
+  det.append(sum);
+  parent.append(det);
+  const more = L.readout(det);
+  return { set(rows, extra = []) { main.set(rows); more.set(extra); det.hidden = !extra.length; } };
+}
+
 const SCENE_W = 16; // мкм
 const SCENE_H = 9.6; // мкм
 const X_SRC = 2; // мкм — источники
@@ -80,7 +95,7 @@ export default {
   mount(el /* , { theme } */) {
     const d = L.disposer();
     const ui = L.layout(el, {
-      caption: 'Масштаб условный: расстояние до экрана всего 12 мкм, чтобы были видны волны. Разность хода Δ = |r₂ − r₁| считается по геометрии рисунка. Точку P можно тянуть по экрану.',
+      caption: 'Масштаб условный: до экрана всего 12 мкм, чтобы были видны волны. Точку P можно тянуть по экрану.',
     });
     const cv = L.canvas(ui.stage, { aspect: 0.6, minHeight: 200, label: 'Два когерентных источника и экран' });
     d.add(cv.destroy);
@@ -89,14 +104,14 @@ export default {
     const anim = L.animator((dt) => { phase = (phase + dt * 0.7) % 1; draw(); }, { autoplay: true });
     d.add(anim.destroy);
 
-    const sA = L.slider(ui.controls, { label: 'Расстояние между источниками d', min: 1, max: 6, step: 0.5, value: DEFAULTS.a, unit: 'мкм', onInput: draw });
-    const sL = L.slider(ui.controls, { label: 'Длина волны λ', min: 380, max: 760, step: 10, value: DEFAULTS.lam, unit: 'нм', onInput: draw });
-    const sY = L.slider(ui.controls, { label: 'Точка P на экране, y', min: -4, max: 4, step: 0.1, value: DEFAULTS.y, unit: 'мкм', onInput: draw });
+    const sA = L.slider(ui.controls, { key: 'sA', label: 'Расстояние между источниками d', min: 1, max: 6, step: 0.5, value: DEFAULTS.a, unit: 'мкм', onInput: draw });
+    const sL = L.slider(ui.controls, { key: 'sL', label: 'Длина волны λ', min: 380, max: 760, step: 10, value: DEFAULTS.lam, unit: 'нм', onInput: draw });
+    const sY = L.slider(ui.controls, { key: 'sY', label: 'Точка P на экране, y', min: -4, max: 4, step: 0.1, value: DEFAULTS.y, unit: 'мкм', onInput: draw });
     const play = L.playButton(ui.controls, anim);
     L.button(ui.controls, 'Сброс', () => {
       sA.set(DEFAULTS.a); sL.set(DEFAULTS.lam); sY.set(DEFAULTS.y); phase = 0; draw();
     }, { reset: true });
-    const ro = L.readout(ui.readout);
+    const ro = moreReadout(ui.readout);
 
     function geom() {
       const W = cv.width, H = cv.height;
@@ -204,14 +219,15 @@ export default {
 
       const um = (x) => x * 1e-6; // мкм → м
       ro.set([
-        ['Длина волны λ', L.fmt(lamNm * 1e-9) + ' м'],
-        ['Расстояние между источниками d', L.fmt(um(a)) + ' м'],
-        ['Расстояние до экрана L', L.fmt(um(L_SCR)) + ' м'],
-        ['Координата точки P, y', L.fmt(um(yP)) + ' м'],
-        ['r₁ / r₂', `${L.fmt(um(r1), 4)} / ${L.fmt(um(r2), 4)} м`],
         ['Разность хода Δ = |r₂ − r₁|', L.fmt(um(delta), 3) + ' м'],
         ['Δ/λ', L.fmt(q, 3)],
         ['В точке P', cls.text],
+        ['Координата точки P, y', L.fmt(um(yP)) + ' м'],
+        ['r₁ / r₂', `${L.fmt(um(r1), 4)} / ${L.fmt(um(r2), 4)} м`],
+      ], [
+        ['Длина волны λ', L.fmt(lamNm * 1e-9) + ' м'],
+        ['Расстояние между источниками d', L.fmt(um(a)) + ' м'],
+        ['Расстояние до экрана L', L.fmt(um(L_SCR)) + ' м'],
       ]);
     }
 
